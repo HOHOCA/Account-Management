@@ -1,2294 +1,1721 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>账号管理系统</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-            background: #f5f7fa;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* 顶部导航栏 */
-        .navbar {
-            background: #2c3e50;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 64px;
-            z-index: 100;
-        }
-
-        .navbar-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .navbar-user {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #fff;
-        }
-
-        .navbar-toggle {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            margin-right: 16px;
-        }
-
-        .navbar-toggle:hover {
-            color: #40a9ff;
-        }
-
-        /* 主布局容器 */
-        .layout-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            min-height: 0;
-        }
-
-        /* 左侧边栏 */
-        .sidebar {
-            width: 200px;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .sidebar.collapsed {
-            width: 64px;
-        }
-
-        .sidebar-menu {
-            flex: 1;
-            padding: 16px 0;
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 24px;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.3s;
-            gap: 12px;
-        }
-
-        .menu-item:hover {
-            background: rgba(24,144,255,0.08);
-            color: #1890ff;
-        }
-
-        .menu-item.active {
-            background: #e6f7ff;
-            color: #1890ff;
-        }
-
-        .menu-icon {
-            width: 18px;
-            height: 18px;
-            flex-shrink: 0;
-        }
-
-        .menu-text {
-            opacity: 1;
-            transition: opacity 0.3s;
-            white-space: nowrap;
-        }
-
-        .sidebar.collapsed .menu-text {
-            opacity: 0;
-            width: 0;
-            overflow: hidden;
-        }
-
-        .sidebar.collapsed .menu-item {
-            justify-content: center;
-            padding: 12px;
-        }
-
-        .sidebar-footer {
-            padding: 16px;
-            border-top: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .sidebar-toggle-btn {
-            background: #f5f5f5;
-            border: none;
-            border-radius: 4px;
-            padding: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            transition: all 0.3s;
-        }
-
-        .sidebar-toggle-btn:hover {
-            background: #e8e8e8;
-            color: #1890ff;
-        }
-
-        .sidebar.collapsed .sidebar-toggle-btn {
-            justify-content: center;
-            width: 100%;
-        }
-
-        .sidebar-toggle-icon {
-            width: 16px;
-            height: 16px;
-            transition: transform 0.3s;
-        }
-
-        .sidebar.collapsed .sidebar-toggle-icon {
-            transform: rotate(180deg);
-        }
-
-        /* 主内容区域 */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* 内容区域 */
-        .container {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* 卡片容器 */
-        .card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .card-header {
-            padding: 16px 24px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .card-body {
-            padding: 24px;
-        }
-
-        /* 工具栏 */
-        .toolbar {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .search-box {
-            position: relative;
-        }
-
-        .search-input {
-            padding: 8px 12px 8px 36px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            width: 240px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .search-input:focus {
-            border-color: #1890ff;
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 16px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-primary {
-            background: #1890ff;
-            color: #fff;
-        }
-
-        .btn-primary:hover {
-            background: #40a9ff;
-        }
-
-        .btn-danger {
-            background: #ff4d4f;
-            color: #fff;
-        }
-
-        .btn-danger:hover {
-            background: #ff7875;
-        }
-
-        .btn-default {
-            background: #f5f5f5;
-            color: #666;
-            border: 1px solid #ddd;
-        }
-
-        .btn-default:hover {
-            background: #e8e8e8;
-            border-color: #bbb;
-        }
-
-        .btn-icon {
-            width: 14px;
-            height: 14px;
-        }
-
-        /* 表格 */
-        .table-wrapper {
-            overflow: auto;
-            flex: 1;
-            min-height: 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: auto;
-        }
-
-        thead {
-            background: #fafafa;
-        }
-
-        th, td {
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        th {
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-            white-space: nowrap;
-            min-width: 100px;
-        }
-
-        td {
-            font-size: 14px;
-            color: #666;
-            white-space: nowrap;
-        }
-
-        th:nth-child(1), td:nth-child(1) { min-width: 180px; }
-        th:nth-child(2), td:nth-child(2) { min-width: 130px; }
-        th:nth-child(3), td:nth-child(3) { min-width: 80px; }
-        th:nth-child(4), td:nth-child(4) { min-width: 120px; }
-        th:nth-child(5), td:nth-child(5) { min-width: 100px; }
-        th:nth-child(6), td:nth-child(6) { min-width: 160px; }
-        th:nth-child(7), td:nth-child(7) { min-width: 180px; }
-
-        tbody tr:hover {
-            background: #fafafa;
-        }
-
-        /* 滑动开关 */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-            display: flex;
-            align-items: center;
-            padding: 4px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: #1890ff;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(22px);
-        }
-
-        .toggle-label {
-            position: absolute;
-            left: 58px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 14px;
-            white-space: nowrap;
-        }
-
-        .toggle-switch.enabled .toggle-label {
-            color: #1890ff;
-            font-weight: 500;
-        }
-
-        .toggle-switch.disabled .toggle-label {
-            color: #999;
-        }
-
-        /* 操作按钮 */
-        .action-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-link {
-            color: #1890ff;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px 8px;
-            font-size: 14px;
-            text-decoration: none;
-        }
-
-        .btn-link:hover {
-            color: #40a9ff;
-        }
-
-        .btn-link-danger {
-            color: #ff4d4f;
-        }
-
-        .btn-link-danger:hover {
-            color: #ff7875;
-        }
-
-        /* 分页 */
-        .pagination {
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid #f0f0f0;
-        }
-
-        .pagination-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .pagination-info {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .page-size-select {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .page-size-select-label {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .page-size-select-btn {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            background: #f5f5f5;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.3s;
-        }
-
-        .page-size-select-btn:hover {
-            background: #e8e8e8;
-            border-color: #bbb;
-        }
-
-        .page-size-arrow {
-            width: 12px;
-            height: 12px;
-        }
-
-        .pagination-controls {
-            display: flex;
-            gap: 8px;
-        }
-
-        .page-btn {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            background: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #333;
-            min-width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-
-        .page-btn:hover:not(:disabled):not(.active) {
-            background: #f5f5f5;
-        }
-
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: #f5f5f5;
-        }
-
-        .page-btn.active {
-            background: #1890ff;
-            color: #fff;
-            border-color: #1890ff;
-        }
-
-        /* 弹窗遮罩 */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.45);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-            max-width: 520px;
-            width: 90%;
-            max-height: 90vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            padding: 16px 24px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-        }
-
-        .modal-close:hover {
-            color: #333;
-        }
-
-        .modal-body {
-            padding: 24px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .modal-footer {
-            padding: 12px 24px;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        /* 表单 */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .form-label .required {
-            color: #ff4d4f;
-            margin-left: 4px;
-        }
-
-        .form-input, .form-select {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .form-input:focus, .form-select:focus {
-            border-color: #1890ff;
-        }
-
-        .form-input.error, .form-select.error {
-            border-color: #ff4d4f;
-        }
-
-        .error-message {
-            color: #ff4d4f;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        /* 双列表设计 */
-        .dual-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .list-panel {
-            border: 1px solid #e8e8e8;
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .list-header {
-            padding: 12px;
-            background: #fafafa;
-            border-bottom: 1px solid #e8e8e8;
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .list-search {
-            padding: 12px;
-            border-bottom: 1px solid #e8e8e8;
-        }
-
-        .list-content {
-            max-height: 400px;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        .list-content table {
-            width: 100%;
-        }
-
-        .list-content thead {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .list-content tbody tr:hover {
-            background: #fafafa;
-        }
-
-        .list-content tbody tr {
-            cursor: pointer;
-        }
-
-        .list-item {
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-        }
-
-        .list-item:hover {
-            background: #fafafa;
-        }
-
-        .list-item input[type="checkbox"] {
-            cursor: pointer;
-        }
-
-        /* 设置页面样式 */
-        .settings-form {
-            max-width: 600px;
-        }
-
-        .form-description {
-            color: #666;
-            font-size: 13px;
-            margin-top: 4px;
-        }
-
-        .form-input-group {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .form-input-small {
-            width: 150px;
-        }
-
-        /* 警告样式 */
-        .alert-warning {
-            background: #fffbe6;
-            border: 1px solid #ffe58f;
-            border-radius: 4px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .alert-icon {
-            margin-right: 8px;
-            width: 16px;
-            height: 16px;
-            color: #faad14;
-        }
-
-        .tab-content {
-            display: none;
-            height: 100%;
-        }
-
-        .tab-content.active {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* 角色授权弹窗样式 */
-        .module-nav-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-bottom: 1px solid #f0f0f0;
-            position: relative;
-        }
-
-        .module-nav-item:hover {
-            background: #f5f5f5;
-        }
-
-        .module-nav-item.active {
-            background: #e6f7ff;
-            border-left: 3px solid #1890ff;
-        }
-
-        .module-nav-expand {
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .module-nav-expand.expanded {
-            transform: rotate(90deg);
-        }
-
-        .module-nav-checkbox {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-            margin-left: auto;
-        }
-
-        .module-nav-name {
-            flex: 1;
-            font-size: 14px;
-            color: #333;
-            margin-left: 8px;
-        }
-
-        .module-nav-empty {
-            width: 16px;
-            margin-right: 8px;
-        }
-
-        .module-nav-item.active .module-nav-name {
-            color: #1890ff;
-            font-weight: 500;
-        }
-
-        .permission-tree-item {
-            padding: 8px 12px;
-            margin: 4px 0;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-        }
-
-        .permission-tree-item:hover {
-            background: #fafafa;
-        }
-
-        .permission-tree-item.active {
-            background: #e6f7ff;
-        }
-
-        .permission-tree-label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .permission-tree-icon {
-            width: 12px;
-            height: 12px;
-            margin-right: 8px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .permission-tree-icon.expanded {
-            transform: rotate(90deg);
-        }
-
-        .permission-tree-checkbox {
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-            cursor: pointer;
-        }
-
-        .permission-tree-name {
-            font-size: 14px;
-            color: #333;
-        }
-
-        .permission-tree-children {
-            margin-left: 20px;
-            margin-top: 4px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="账号管理功能说明">
+  <title>账号管理功能说明</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome -->
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap"></noscript>
+  
+  <style>
+    * { font-family: 'Noto Sans SC', sans-serif; }
+    body { background: #f8f9fa; }
+    
+    /* 卡片悬停效果 */
+    .card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    
+    /* 标签样式 */
+    .pill { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 500; }
+    
+    /* 打印样式 */
+    @media print {
+      /* 背景处理 */
+      body { background: white !important; }
+      .container { max-width: 100% !important; }
+      
+      /* 取消交互效果 */
+      .card:hover { transform: none; }
+      a { text-decoration: none; color: inherit; }
+      
+      /* 隐藏不需要打印的元素 */
+      .no-print { display: none !important; }
+      
+      /* 分页控制 */
+      .page-break-before { page-break-before: always; }
+      .page-break-after { page-break-after: always; }
+      .avoid-break { page-break-inside: avoid; }
+      .never-break { page-break-inside: avoid !important; }
+      
+      /* 智能分页 */
+      .smart-break {
+        page-break-inside: auto;
+        orphans: 3;
+        widows: 3;
+      }
+      
+      /* 页面边距 */
+      @page { margin: 1.5cm; size: A4; }
+      
+      /* 确保背景色和边框打印 */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      
+      /* 优化卡片阴影 */
+      .shadow-md, .shadow-lg, .shadow-xl {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+      }
+      
+      /* 确保文字清晰 */
+      body, p, li, td, th {
+        orphans: 3;
+        widows: 3;
+      }
+      
+      /* 标题不要单独在页面底部 */
+      h1, h2, h3, h4, h5, h6 {
+        page-break-after: avoid;
+        page-break-inside: avoid;
+      }
+      
+      /* 图片不要跨页断开 */
+      img, svg, figure {
+        page-break-inside: avoid;
+      }
+      
+      /* 表格不要跨页断开 */
+      table {
+        page-break-inside: avoid;
+      }
+      
+      /* 打印时强制保持网格布局 */
+      .grid.grid-cols-1.md\:grid-cols-2,
+      .grid[class*="grid-cols-2"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1.5rem !important;
+      }
+      
+      .grid.grid-cols-1.md\:grid-cols-3,
+      .grid[class*="grid-cols-3"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 1rem !important;
+      }
+      
+      /* 打印时确保卡片不会被分页断开 */
+      .grid > div {
+        page-break-inside: avoid;
+        margin-bottom: 0 !important;
+      }
+      
+      /* 强制整个网格作为一个整体，避免分页 */
+      .grid {
+        page-break-inside: avoid !important;
+      }
+      
+      /* 特殊处理：垂直堆叠布局 */
+      .space-y-6 > div,
+      .space-y-4 > div {
+        page-break-inside: avoid !important;
+      }
+      
+      /* 章节级别避免分页 */
+      section {
+        page-break-inside: avoid;
+      }
+      
+      /* 确保Font Awesome图标在打印时显示 */
+      .fas, .far, .fab, .fal, .fad {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      
+      /* 强制显示图标 */
+      i[class*="fa-"] {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+      
+      /* 长列表的智能分页 */
+      .long-list {
+        break-inside: auto;
+      }
+      
+      .long-list li {
+        page-break-inside: avoid;
+        orphans: 2;
+        widows: 2;
+      }
+    }
+    
+    /* 屏幕显示时容器宽度限制 */
+    @media screen {
+      .container { max-width: 210mm; }
+    }
+  </style>
 </head>
-<body>
-    <!-- 顶部导航栏 -->
-    <div class="navbar">
-        <div class="navbar-title">账号管理系统</div>
-        <div class="navbar-user">
-            <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
-            </svg>
-            <span>超级管理员</span>
+<body class="min-h-screen py-8 px-4">
+  <div class="container mx-auto max-w-[210mm]">
+    
+    <!-- 标题区域 -->
+    <header class="bg-white rounded-xl shadow-xl p-8 mb-8">
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex-1">
+          <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
+            <i class="fas fa-users-cog text-blue-500 mr-3"></i>
+            账号管理功能说明
+          </h1>
+          <p class="text-slate-600">完整的账号管理和角色权限管理功能规范</p>
         </div>
-    </div>
-
-    <!-- 主布局容器 -->
-    <div class="layout-container">
-        <!-- 左侧边栏 -->
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-menu">
-                <div class="menu-item active" onclick="switchPage('account')">
-                    <svg class="menu-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
-                    </svg>
-                    <span class="menu-text">账号管理</span>
+        
+        <!-- 跳转到原型按钮 -->
+        <a href="prototype.html" class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all shadow-sm hover:shadow-md whitespace-nowrap">
+          <i class="fas fa-desktop text-sm"></i>
+          <span>查看原型</span>
+        </a>
+      </div>
+    </header>
+    
+    <!-- 主要内容区域 -->
+    <main>
+      
+      <!-- 账号管理章节 -->
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center">
+          <i class="fas fa-user-friends text-blue-500 mr-3"></i>
+          账号管理
+        </h2>
+        
+        <!-- 用户列表展示 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-list text-blue-500 mr-2"></i>
+            用户列表展示
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有账号管理权限</li>
+            <li>同时满足以上条件</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">界面布局</h4>
+          
+          <div class="bg-blue-50 rounded-lg p-6 mb-4 border-2 border-blue-200">
+            <h5 class="font-bold text-blue-800 mb-4 text-center">账号管理页面整体布局示意图</h5>
+            
+            <div class="bg-white rounded-lg shadow-lg border-2 border-blue-300">
+              <!-- 顶部工具栏 -->
+              <div class="bg-slate-50 border-b p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <i class="fas fa-search text-slate-400 text-sm"></i>
+                  <input type="text" class="border rounded px-3 py-1.5 text-sm" placeholder="请输入工号/姓名" disabled>
                 </div>
-                <div class="menu-item" onclick="switchPage('role')">
-                    <svg class="menu-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-                    </svg>
-                    <span class="menu-text">角色权限</span>
-                </div>
-                <div class="menu-item" onclick="switchPage('settings')">
-                    <svg class="menu-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
-                        <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.292-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.292c.415.764-.42 1.6-1.185 1.184l-.292-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.292A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
-                    </svg>
-                    <span class="menu-text">系统设置</span>
-                </div>
-            </div>
-            <div class="sidebar-footer">
-                <button class="sidebar-toggle-btn" onclick="toggleSidebar()">
-                    <svg class="sidebar-toggle-icon" id="toggleIcon" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
-                    </svg>
+                <button class="bg-blue-500 text-white px-4 py-1.5 rounded text-sm">
+                  <i class="fas fa-plus mr-1"></i>新增用户
                 </button>
-            </div>
-        </div>
-
-        <!-- 主内容区域 -->
-        <div class="main-content">
-            <!-- 内容区域 -->
-            <div class="container">
-            <!-- 账号管理 -->
-            <div id="accountTab" class="tab-content active">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">账号管理</div>
-                        <div class="toolbar">
-                            <div class="search-box">
-                                <svg class="search-icon" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                                </svg>
-                                <input type="text" class="search-input" placeholder="请输入工号/姓名">
-                            </div>
-                            <button class="btn btn-primary" onclick="openAddUserModal()">
-                                <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                </svg>
-                                新增用户
-                            </button>
+              </div>
+              
+              <!-- 表格区域 -->
+              <div class="p-4">
+                <table class="w-full text-sm">
+                  <thead class="bg-slate-100">
+                    <tr>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">姓名/用户名</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">手机号码</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">性别</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">角色</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">账号状态</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">修改时间</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                      <td class="px-4 py-2">张明华 / zhangmh</td>
+                      <td class="px-4 py-2">13812345678</td>
+                      <td class="px-4 py-2">男</td>
+                      <td class="px-4 py-2">医生</td>
+                      <td class="px-4 py-2">
+                        <div class="flex items-center">
+                          <div class="w-14 h-7 bg-green-500 rounded-full relative">
+                            <span class="absolute right-1 inline-block w-5 h-5 bg-white rounded-full mt-1"></span>
+                          </div>
+                          <span class="ml-2 text-xs">启用</span>
                         </div>
-                    </div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>姓名/用户名</th>
-                                    <th>手机号码</th>
-                                    <th>性别</th>
-                                    <th>角色</th>
-                                    <th>账号状态</th>
-                                    <th>修改时间</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="userTable">
-                                <!-- 数据通过JS填充 -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="pagination">
-                        <div class="pagination-left">
-                            <div class="pagination-info">共<span id="totalUsers">13</span>条</div>
+                      </td>
+                      <td class="px-4 py-2 text-slate-500">2025-10-22 14:31:00</td>
+                      <td class="px-4 py-2">
+                        <span class="text-blue-500 hover:underline text-xs mr-3">编辑</span>
+                        <span class="text-amber-500 hover:underline text-xs mr-3">重置</span>
+                        <span class="text-red-500 hover:underline text-xs">删除</span>
+                      </td>
+                    </tr>
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                      <td class="px-4 py-2">李丽娟 / lilj</td>
+                      <td class="px-4 py-2">13787654321</td>
+                      <td class="px-4 py-2">女</td>
+                      <td class="px-4 py-2">医生</td>
+                      <td class="px-4 py-2">
+                        <div class="flex items-center">
+                          <div class="w-14 h-7 bg-slate-300 rounded-full relative">
+                            <span class="absolute left-1 inline-block w-5 h-5 bg-white rounded-full mt-1"></span>
+                          </div>
+                          <span class="ml-2 text-xs">禁用</span>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <div class="page-size-select">
-                                <button class="page-size-select-btn">
-                                    <span>20条/页</span>
-                                    <svg class="page-size-arrow" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="pagination-controls">
-                                <button class="page-btn" id="prevPage1" onclick="changePage(-1, 'user')" disabled>
-                                    <svg style="width: 12px; height: 12px;" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
-                                    </svg>
-                                </button>
-                                <button class="page-btn active">1</button>
-                                <button class="page-btn">2</button>
-                                <button class="page-btn">3</button>
-                                <button class="page-btn">4</button>
-                                <button class="page-btn" id="nextPage1" onclick="changePage(1, 'user')">
-                                    <svg style="width: 12px; height: 12px;" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 角色权限 -->
-            <div id="roleTab" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">角色权限</div>
-                        <div class="toolbar">
-                            <button class="btn btn-primary" onclick="openAddRoleModal()">
-                                <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                </svg>
-                                新增
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>角色名称</th>
-                                    <th>用户数量</th>
-                                    <th>状态</th>
-                                    <th>角色描述</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="roleTable">
-                                <!-- 数据通过JS填充 -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="pagination">
-                        <div class="pagination-left">
-                            <div class="pagination-info">共<span id="totalRoles">13</span>条</div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <div class="page-size-select">
-                                <button class="page-size-select-btn">
-                                    <span>20条/页</span>
-                                    <svg class="page-size-arrow" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="pagination-controls">
-                                <button class="page-btn" id="prevPage2" onclick="changePage(-1, 'role')" disabled>
-                                    <svg style="width: 12px; height: 12px;" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
-                                    </svg>
-                                </button>
-                                <button class="page-btn active">1</button>
-                                <button class="page-btn">2</button>
-                                <button class="page-btn">3</button>
-                                <button class="page-btn">4</button>
-                                <button class="page-btn" id="nextPage2" onclick="changePage(1, 'role')">
-                                    <svg style="width: 12px; height: 12px;" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 系统设置 -->
-            <div id="settingsTab" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">系统设置</div>
-                    </div>
-                    <div class="card-body">
-                        <div class="settings-form">
-                            <div class="form-group">
-                                <label class="form-label">超时登出设置</label>
-                                <div class="form-description">
-                                    当用户处于登录状态但连续未操作达到设定时间后，系统将自动登出该用户。
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">超时时间</label>
-                                <div class="form-input-group">
-                                    <input type="number" class="form-input form-input-small" id="timeoutInput" value="30" min="5" max="120">
-                                    <span style="color: #666;">分钟</span>
-                                </div>
-                                <div class="form-description">
-                                    建议范围：5-120分钟，默认30分钟。设置后将对所有用户生效。
-                                </div>
-                            </div>
-                            <div class="form-group" style="margin-top: 32px;">
-                                <button class="btn btn-primary" onclick="saveSettings()">
-                                    保存设置
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 新增用户弹窗 -->
-    <div class="modal-overlay" id="addUserModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">新增用户</div>
-                <button class="modal-close" onclick="closeModal('addUserModal')">
-                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">姓名 <span class="required">*</span></label>
-                    <input type="text" class="form-input" id="userName" placeholder="请输入姓名">
-                    <div class="error-message" id="userNameError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">用户名 <span class="required">*</span></label>
-                    <input type="text" class="form-input" id="userUsername" placeholder="请输入用户名">
-                    <div class="error-message" id="userUsernameError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">密码 <span class="required">*</span></label>
-                    <input type="password" class="form-input" id="userPassword" placeholder="请输入密码">
-                    <div class="error-message" id="userPasswordError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">角色 <span class="required">*</span></label>
-                    <select class="form-select" id="userRole">
-                        <option value="">请选择角色</option>
-                        <option value="doctor">医生</option>
-                        <option value="physicist">物理师</option>
-                    </select>
-                    <div class="error-message" id="userRoleError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">工号</label>
-                    <input type="text" class="form-input" id="userEmployeeId" placeholder="请输入工号">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">手机号码</label>
-                    <input type="text" class="form-input" id="userPhone" placeholder="请输入手机号码">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">性别</label>
-                    <select class="form-select" id="userGender">
-                        <option value="">请选择</option>
-                        <option value="male">男</option>
-                        <option value="female">女</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">邮箱</label>
-                    <input type="email" class="form-input" id="userEmail" placeholder="请输入邮箱">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">备注</label>
-                    <input type="text" class="form-input" id="userRemarks" placeholder="请输入备注">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('addUserModal')">取消</button>
-                <button class="btn btn-primary" onclick="saveUser()">确定</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 重置密码确认弹窗 -->
-    <div class="modal-overlay" id="resetPasswordModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">警告</div>
-                <button class="modal-close" onclick="closeModal('resetPasswordModal')">
-                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="alert-warning">
-                    <svg class="alert-icon" fill="currentColor" viewBox="0 0 16 16" style="display: inline-block; vertical-align: middle;">
-                        <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                    </svg>
-                    确定重置用户密码？
-                </div>
-                <div style="color: #666; font-size: 14px;">
-                    重置后用户的登录密码将更新为初始密码 manteia123
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('resetPasswordModal')">取消</button>
-                <button class="btn btn-danger" onclick="confirmResetPassword()">确定</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 删除用户确认弹窗 -->
-    <div class="modal-overlay" id="deleteUserModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">提示</div>
-                <button class="modal-close" onclick="closeModal('deleteUserModal')">
-                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="color: #666;">是否确认删除当前选中账号？</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('deleteUserModal')">取消</button>
-                <button class="btn btn-danger" onclick="confirmDeleteUser()">删除</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 新增角色弹窗 -->
-    <div class="modal-overlay" id="addRoleModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">新增</div>
-                <button class="modal-close" onclick="closeModal('addRoleModal')">
-                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">角色名称 <span class="required">*</span></label>
-                    <input type="text" class="form-input" id="roleName" placeholder="请输入角色名称">
-                    <div class="error-message" id="roleNameError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">角色描述</label>
-                    <input type="text" class="form-input" id="roleDesc" placeholder="请输入角色描述">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('addRoleModal')">取消</button>
-                <button class="btn btn-primary" onclick="saveRole()">确定</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 分配用户弹窗 -->
-    <div class="modal-overlay" id="assignUserModal">
-        <div class="modal" style="max-width: 1000px; width: 90%;">
-            <div class="modal-header">
-                <div class="modal-title">分配用户</div>
-                <button class="modal-close" onclick="closeModal('assignUserModal')">
-                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="dual-list">
-                    <div class="list-panel">
-                        <div class="list-header" style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>可选用户</span>
-                            <div style="display: flex; gap: 8px; align-items: center; flex: 1; max-width: 400px; margin-left: 16px;">
-                                <input type="text" class="form-input" id="assignUserSearch" placeholder="请输入姓名" oninput="filterAvailableUsers()" onkeypress="if(event.key==='Enter')filterAvailableUsers()" style="flex: 1;">
-                                <button class="btn btn-primary" onclick="filterAvailableUsers()" style="padding: 8px 12px;">
-                                    <svg style="width: 14px; height: 14px;" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="list-content" id="availableUserList">
-                            <!-- 动态生成 -->
-                        </div>
-                    </div>
-                    <div class="list-panel">
-                        <div class="list-header">
-                            <span>已分配用户</span>
-                            <button class="btn btn-primary" onclick="removeAllAssignedUsers()" style="padding: 4px 12px; font-size: 12px;">全部移除</button>
-                        </div>
-                        <div class="list-content" id="assignedUserList">
-                            <!-- 动态生成 -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('assignUserModal')">取消</button>
-                <button class="btn btn-primary">确定</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 修改角色弹窗 -->
-    <div class="modal-overlay" id="editRoleModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">修改</div>
-                <button class="modal-close" onclick="closeModal('editRoleModal')">
-                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">角色名称 <span class="required">*</span></label>
-                    <input type="text" class="form-input" id="editRoleName" placeholder="请输入角色名称">
-                    <div class="error-message" id="editRoleNameError"></div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">角色描述</label>
-                    <input type="text" class="form-input" id="editRoleDesc" placeholder="请输入角色描述">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('editRoleModal')">取消</button>
-                <button class="btn btn-primary" onclick="updateRole()">确定</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 删除角色确认弹窗 -->
-    <div class="modal-overlay" id="deleteRoleModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">提示</div>
-                <button class="modal-close" onclick="closeModal('deleteRoleModal')">
-                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="color: #666;">是否删除该角色？</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('deleteRoleModal')">取消</button>
-                <button class="btn btn-danger" onclick="confirmDeleteRole()">删除</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 角色授权弹窗 -->
-    <div class="modal-overlay" id="roleAuthModal">
-        <div class="modal" style="width: 1000px; height: 700px; max-width: none; max-height: none;">
-            <div class="modal-header">
-                <div class="modal-title">角色授权</div>
-                <button class="modal-close" onclick="closeModal('roleAuthModal')">
-                    <svg class="btn-icon" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body" style="display: flex; gap: 0; padding: 0; height: 560px; overflow: hidden;">
-                <!-- 左侧模块导航 -->
-                <div id="moduleNav" style="width: 240px; background: #fafafa; border-right: 1px solid #e8e8e8; overflow-y: auto; height: 100%;">
-                    <!-- 动态生成 -->
-                </div>
-                <!-- 中间权限树 -->
-                <div id="permissionTree" style="flex: 1; overflow-y: auto; padding: 20px; height: 100%;">
-                    <!-- 动态生成 -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                    <button class="btn btn-default" onclick="closeModal('roleAuthModal')">取消</button>
-                    <button class="btn btn-primary" onclick="saveRoleAuth()">确定</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // 用户数据
-        const users = [
-            { name: '张明华', username: 'zhangmh', phone: '13812345678', gender: '男', role: '医生', status: '启用', updateTime: '2025-10-22 14:31:00' },
-            { name: '李丽娟', username: 'lilj', phone: '13787654321', gender: '女', role: '医生', status: '禁用', updateTime: '2025-10-22 14:30:00' },
-            { name: '王建国', username: 'wangjg', phone: '13900112233', gender: '男', role: '医生', status: '启用', updateTime: '2025-10-22 14:29:00' },
-            { name: '陈秀英', username: 'chenxy', phone: '15898765432', gender: '女', role: '物理师', status: '启用', updateTime: '2025-10-22 14:28:00' },
-            { name: '刘志强', username: 'liuzq', phone: '15011112222', gender: '男', role: '物理师', status: '启用', updateTime: '2025-10-22 14:27:00' },
-        ];
-
-        const roles = [
-            { name: '医生', count: 3, status: '启用', desc: '医生用户' },
-            { name: '物理师', count: 2, status: '启用', desc: '物理师用户' },
-        ];
-
-        // 初始化页面
-        function initPage() {
-            renderUsers();
-            renderRoles();
-        }
-
-        // 渲染用户表格
-        function renderUsers() {
-            const tbody = document.getElementById('userTable');
-            tbody.innerHTML = users.map((user, index) => {
-                const isEnabled = user.status === '启用';
-                return `
-                <tr>
-                    <td>${user.name} / ${user.username}</td>
-                    <td>${user.phone || ''}</td>
-                    <td>${user.gender || ''}</td>
-                    <td>${user.role}</td>
-                    <td>
-                        <label class="toggle-switch ${isEnabled ? 'enabled' : 'disabled'}">
-                            <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleUserStatus(${index})">
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-label">${isEnabled ? '启用' : '禁用'}</span>
-                        </label>
-                    </td>
-                    <td>${user.updateTime}</td>
-                    <td>
-                        <div class="action-group">
-                            <a href="#" class="btn-link" onclick="editUser('${user.username}')">编辑</a>
-                            <a href="#" class="btn-link" onclick="resetPassword('${user.username}')">重置</a>
-                            <a href="#" class="btn-link btn-link-danger" onclick="deleteUser('${user.username}')">删除</a>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            }).join('');
-        }
-
-        // 切换用户状态
-        function toggleUserStatus(index) {
-            const user = users[index];
-            user.status = user.status === '启用' ? '禁用' : '启用';
-            renderUsers();
-        }
-
-        // 渲染角色表格
-        function renderRoles() {
-            const tbody = document.getElementById('roleTable');
-            tbody.innerHTML = roles.map((role, index) => {
-                const isEnabled = role.status === '启用';
-                return `
-                <tr>
-                    <td>${role.name}</td>
-                    <td>${role.count}</td>
-                    <td>
-                        <label class="toggle-switch ${isEnabled ? 'enabled' : 'disabled'}">
-                            <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleRoleStatus(${index})">
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-label">${isEnabled ? '启用' : '禁用'}</span>
-                        </label>
-                    </td>
-                    <td>${role.desc}</td>
-                    <td>
-                        <div class="action-group">
-                            <a href="#" class="btn-link" onclick="openRoleAuth('${role.name}', ${index})">角色授权</a>
-                            <a href="#" class="btn-link" onclick="assignUser('${role.name}')">分配用户</a>
-                            <a href="#" class="btn-link" onclick="editRole(${index})">修改</a>
-                            <a href="#" class="btn-link btn-link-danger" onclick="deleteRole('${role.name}')">删除</a>
-                        </div>
-                    </td>
-                </tr>
-            `;
-            }).join('');
-        }
-
-        // 切换角色状态
-        function toggleRoleStatus(index) {
-            const role = roles[index];
-            role.status = role.status === '启用' ? '禁用' : '启用';
-            renderRoles();
-        }
-
-        // 切换页面
-        function switchPage(page) {
-            // 隐藏所有标签页
-            document.getElementById('accountTab').classList.remove('active');
-            document.getElementById('roleTab').classList.remove('active');
-            document.getElementById('settingsTab').classList.remove('active');
-
-            // 显示选中的标签页
-            document.getElementById(page + 'Tab').classList.add('active');
-
-            // 更新菜单激活状态
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            event.target.closest('.menu-item').classList.add('active');
-        }
-
-        // 清除所有错误状态
-        function clearErrors() {
-            const inputs = document.querySelectorAll('#addUserModal .form-input, #addUserModal .form-select');
-            inputs.forEach(input => {
-                input.classList.remove('error');
-            });
-            const errorMessages = document.querySelectorAll('#addUserModal .error-message');
-            errorMessages.forEach(msg => {
-                msg.textContent = '';
-            });
-        }
-
-        // 打开弹窗
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
-        }
-
-        // 关闭弹窗
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
-
-        // 新增用户
-        function openAddUserModal() {
-            // 更新弹窗标题
-            document.querySelector('#addUserModal .modal-title').textContent = '新增用户';
-            clearErrors();
-            openModal('addUserModal');
-        }
-
-        // 显示错误
-        function showError(fieldId, message) {
-            const field = document.getElementById(fieldId);
-            const errorElement = document.getElementById(fieldId + 'Error');
-            if (field) {
-                field.classList.add('error');
-            }
-            if (errorElement) {
-                errorElement.textContent = message;
-            }
-        }
-
-        // 验证表单
-        function validateForm() {
-            let isValid = true;
-            clearErrors();
-
-            // 验证姓名
-            const name = document.getElementById('userName').value.trim();
-            if (!name) {
-                showError('userName', '请输入姓名');
-                isValid = false;
-            }
-
-            // 验证用户名
-            const username = document.getElementById('userUsername').value.trim();
-            if (!username) {
-                showError('userUsername', '请输入用户名');
-                isValid = false;
-            } else if (username.length < 2 || username.length > 18) {
-                showError('userUsername', '用户名应大于1个字符且小于19个字符');
-                isValid = false;
-            }
-
-            // 验证密码
-            const password = document.getElementById('userPassword').value;
-            if (!password) {
-                showError('userPassword', '请输入密码');
-                isValid = false;
-            }
-
-            // 验证角色
-            const role = document.getElementById('userRole').value;
-            if (!role) {
-                showError('userRole', '请选择角色');
-                isValid = false;
-            }
-
-            return isValid;
-        }
-
-        function saveUser() {
-            if (!validateForm()) {
-                return;
-            }
-            
-            // 获取表单数据
-            const name = document.getElementById('userName').value.trim();
-            const username = document.getElementById('userUsername').value.trim();
-            const password = document.getElementById('userPassword').value;
-            const role = document.getElementById('userRole').value;
-            const employeeId = document.getElementById('userEmployeeId').value.trim();
-            const phone = document.getElementById('userPhone').value.trim();
-            const gender = document.getElementById('userGender').value;
-            const email = document.getElementById('userEmail').value.trim();
-            const remarks = document.getElementById('userRemarks').value.trim();
-            
-            // 获取角色显示名称
-            const roleDisplayName = role === 'doctor' ? '医生' : '物理师';
-            
-            // 创建新用户对象
-            const now = new Date();
-            const updateTime = now.getFullYear() + '-' + 
-                String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-                String(now.getDate()).padStart(2, '0') + ' ' + 
-                String(now.getHours()).padStart(2, '0') + ':' + 
-                String(now.getMinutes()).padStart(2, '0') + ':' + 
-                String(now.getSeconds()).padStart(2, '0');
-            
-            const newUser = {
-                name: name,
-                username: username,
-                phone: phone || '',
-                gender: gender === 'male' ? '男' : (gender === 'female' ? '女' : ''),
-                role: roleDisplayName,
-                status: '启用',
-                updateTime: updateTime
-            };
-            
-            // 添加到数组的第一位
-            users.unshift(newUser);
-            
-            // 更新总数
-            document.getElementById('totalUsers').textContent = users.length;
-            
-            // 重新渲染用户列表
-            renderUsers();
-            
-            alert('保存成功！');
-            closeModal('addUserModal');
-            
-            // 清除表单
-            clearErrors();
-            document.getElementById('userName').value = '';
-            document.getElementById('userUsername').value = '';
-            document.getElementById('userPassword').value = '';
-            document.getElementById('userRole').value = '';
-            document.getElementById('userEmployeeId').value = '';
-            document.getElementById('userPhone').value = '';
-            document.getElementById('userGender').value = '';
-            document.getElementById('userEmail').value = '';
-            document.getElementById('userRemarks').value = '';
-        }
-
-        // 重置密码
-        function resetPassword(username) {
-            openModal('resetPasswordModal');
-        }
-
-        function confirmResetPassword() {
-            alert('密码已重置为 admin123');
-            closeModal('resetPasswordModal');
-        }
-
-        // 删除用户
-        function deleteUser(username) {
-            openModal('deleteUserModal');
-        }
-
-        function confirmDeleteUser() {
-            alert('删除成功！');
-            closeModal('deleteUserModal');
-        }
-
-        // 编辑用户
-        function editUser(username) {
-            // 更新弹窗标题
-            document.querySelector('#addUserModal .modal-title').textContent = '编辑用户';
-            openModal('addUserModal');
-        }
-
-        // 清除角色错误状态
-        function clearRoleErrors() {
-            const roleNameInput = document.getElementById('roleName');
-            const roleNameError = document.getElementById('roleNameError');
-            if (roleNameInput) {
-                roleNameInput.classList.remove('error');
-            }
-            if (roleNameError) {
-                roleNameError.textContent = '';
-            }
-        }
-
-        // 验证角色表单
-        function validateRoleForm() {
-            let isValid = true;
-            clearRoleErrors();
-
-            // 验证角色名称
-            const roleName = document.getElementById('roleName').value.trim();
-            if (!roleName) {
-                document.getElementById('roleName').classList.add('error');
-                document.getElementById('roleNameError').textContent = '请输入角色名称';
-                isValid = false;
-            }
-
-            return isValid;
-        }
-
-        // 新增角色
-        function openAddRoleModal() {
-            clearRoleErrors();
-            openModal('addRoleModal');
-        }
-
-        function saveRole() {
-            if (!validateRoleForm()) {
-                return;
-            }
-            
-            // 获取表单数据
-            const roleName = document.getElementById('roleName').value.trim();
-            const roleDesc = document.getElementById('roleDesc').value.trim();
-            
-            // 创建新角色对象
-            const newRole = {
-                name: roleName,
-                count: 0,
-                status: '启用',
-                desc: roleDesc || ''
-            };
-            
-            // 添加到数组的第一位
-            roles.unshift(newRole);
-            
-            // 更新总数
-            document.getElementById('totalRoles').textContent = roles.length;
-            
-            // 重新渲染角色列表
-            renderRoles();
-            
-            alert('保存成功！');
-            closeModal('addRoleModal');
-            
-            // 清除表单
-            clearRoleErrors();
-            document.getElementById('roleName').value = '';
-            document.getElementById('roleDesc').value = '';
-        }
-
-        // 分配用户相关数据
-        let currentAssigningRole = '';
-        let assignedUsers = [];
-        let availableUsersFiltered = [];
-
-        // 分配用户
-        function assignUser(roleName) {
-            currentAssigningRole = roleName;
-            assignedUsers = [];
-            loadAvailableUsers();
-            renderAssignedUsers();
-            openModal('assignUserModal');
-        }
-
-        // 加载可用用户列表
-        function loadAvailableUsers() {
-            // 获取所有没有分配角色的用户（这里简化处理，获取所有医生和物理师）
-            availableUsersFiltered = users.filter(user => user.status === '启用');
-            renderAvailableUsers();
-        }
-
-        // 渲染可用用户列表
-        function renderAvailableUsers() {
-            const searchText = document.getElementById('assignUserSearch')?.value || '';
-            const filtered = availableUsersFiltered.filter(user => 
-                (user.name.includes(searchText) || user.username.includes(searchText))
-            );
-            
-            const container = document.getElementById('availableUserList');
-            if (!container) return;
-            
-            const allChecked = filtered.length > 0 && filtered.every(user => assignedUsers.includes(user.username));
-            const hasUnchecked = filtered.some(user => !assignedUsers.includes(user.username));
-            
-            container.innerHTML = `
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: #fafafa;">
-                            <tr>
-                                <th style="padding: 8px 0 8px 12px; text-align: left; font-size: 14px; font-weight: 600; color: #333; width: auto; min-width: fit-content;">
-                                    <input type="checkbox" id="selectAllUsers" ${allChecked && !hasUnchecked ? 'checked' : ''} onchange="toggleSelectAllUsers(this.checked)">
-                                </th>
-                                <th style="padding: 8px 12px; text-align: left; font-size: 14px; font-weight: 600; color: #333;">姓名</th>
-                                <th style="padding: 8px 12px; text-align: left; font-size: 14px; font-weight: 600; color: #333;">工号</th>
-                                <th style="padding: 8px 12px; text-align: left; font-size: 14px; font-weight: 600; color: #333;">用户类型</th>
-                            </tr>
-                    </thead>
-                    <tbody>
-                        ${filtered.map((user, index) => {
-                            const isChecked = assignedUsers.includes(user.username);
-                            return `
-                            <tr style="border-bottom: 1px solid #f0f0f0;">
-                                <td style="padding: 8px 0 8px 12px; width: auto; min-width: fit-content;">
-                                    <input type="checkbox" id="availUser${index}" ${isChecked ? 'checked' : ''} onchange="toggleAvailableUser('${user.username}', this.checked)">
-                                </td>
-                                <td style="padding: 8px 12px; font-size: 14px; color: #666;">${user.name}</td>
-                                <td style="padding: 8px 12px; font-size: 14px; color: #666;">${user.username}</td>
-                                <td style="padding: 8px 12px; font-size: 14px; color: #666;">${user.role}</td>
-                            </tr>
-                        `;
-                        }).join('')}
-                    </tbody>
+                      </td>
+                      <td class="px-4 py-2 text-slate-500">2025-10-22 14:30:00</td>
+                      <td class="px-4 py-2">
+                        <span class="text-blue-500 hover:underline text-xs mr-3">编辑</span>
+                        <span class="text-amber-500 hover:underline text-xs mr-3">重置</span>
+                        <span class="text-red-500 hover:underline text-xs">删除</span>
+                      </td>
+                    </tr>
+                  </tbody>
                 </table>
-            `;
-        }
-
-        // 全选/取消全选
-        function toggleSelectAllUsers(isChecked) {
-            const searchText = document.getElementById('assignUserSearch')?.value || '';
-            const filtered = availableUsersFiltered.filter(user => 
-                (user.name.includes(searchText) || user.username.includes(searchText))
-            );
+              </div>
+              
+              <!-- 分页控件 -->
+              <div class="bg-slate-50 border-t px-4 py-3 flex items-center justify-between">
+                <div class="text-sm text-slate-600">共<span class="font-bold mx-1">13</span>条</div>
+                <div class="flex items-center space-x-2">
+                  <button class="px-3 py-1 border rounded text-sm bg-white">上一页</button>
+                  <button class="px-3 py-1 bg-blue-500 text-white rounded text-sm">1</button>
+                  <button class="px-3 py-1 border rounded text-sm bg-white">2</button>
+                  <button class="px-3 py-1 border rounded text-sm bg-white">下一页</button>
+                </div>
+              </div>
+            </div>
             
-            if (isChecked) {
-                // 全选：添加所有可见用户
-                filtered.forEach(user => {
-                    if (!assignedUsers.includes(user.username)) {
-                        assignedUsers.push(user.username);
-                    }
-                });
-            } else {
-                // 取消全选：移除所有可见用户
-                const visibleUsernames = filtered.map(u => u.username);
-                assignedUsers = assignedUsers.filter(u => !visibleUsernames.includes(u));
-            }
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              页面包含：搜索框、新增按钮、数据列表、状态开关、操作按钮、分页控件
+            </div>
+          </div>
+          
+          <div class="bg-blue-50 rounded-lg p-4 mb-4">
+            <h5 class="font-bold text-blue-800 mb-3">用户列表字段说明</h5>
+            <div class="overflow-x-auto">
+              <table class="min-w-full bg-white border border-slate-200 rounded-lg">
+                <thead class="bg-slate-100">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-slate-700 font-bold">字段名称</th>
+                    <th class="px-4 py-2 text-left text-slate-700 font-bold">说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">姓名/用户名</td>
+                    <td class="px-4 py-2 text-slate-700">显示用户真实姓名和登录用户名</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">手机号码</td>
+                    <td class="px-4 py-2 text-slate-700">用户联系方式</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">性别</td>
+                    <td class="px-4 py-2 text-slate-700">男/女</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">角色</td>
+                    <td class="px-4 py-2 text-slate-700">用户所属角色（如医生、物理师等）</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">账号状态</td>
+                    <td class="px-4 py-2 text-slate-700">启用/禁用切换开关</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">修改时间</td>
+                    <td class="px-4 py-2 text-slate-700">最后修改时间戳</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">操作</td>
+                    <td class="px-4 py-2 text-slate-700">编辑、重置、删除按钮</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <ul class="space-y-2 text-slate-700">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>列表顶部显示搜索框和新增用户按钮</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>列表底部显示分页控件</span>
+            </li>
+          </ul>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+            <li>进入账号管理页面</li>
+            <li>系统自动加载用户列表数据</li>
+            <li>显示共{总数}条记录</li>
+            <li>列表支持分页浏览，默认每页显示20条记录</li>
+          </ol>
+        </div>
+        
+        <!-- 搜索用户 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-search text-blue-500 mr-2"></i>
+            搜索用户
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>当前在账号管理页面</li>
+            <li>用户列表数据已加载完成</li>
+            <li>同时满足以上条件</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-blue-50 rounded-lg p-6 mb-4 border-2 border-blue-200">
+            <h5 class="font-bold text-blue-800 mb-4 text-center">搜索用户使用示意图</h5>
             
-            renderAssignedUsers();
-            renderAvailableUsers();
-        }
-
-        // 切换可用用户选择
-        function toggleAvailableUser(username, isChecked) {
-            if (isChecked) {
-                // 添加到已分配列表
-                if (!assignedUsers.includes(username)) {
-                    assignedUsers.push(username);
-                }
-            } else {
-                // 从已分配列表移除
-                assignedUsers = assignedUsers.filter(u => u !== username);
-            }
-            renderAssignedUsers();
-        }
-
-        // 渲染已分配用户列表
-        function renderAssignedUsers() {
-            const container = document.getElementById('assignedUserList');
-            if (!container) return;
+            <div class="bg-white rounded-lg shadow-lg border-2 border-blue-300 p-6">
+              <div class="flex items-center space-x-2 mb-4">
+                <i class="fas fa-search text-blue-500"></i>
+                <input type="text" class="flex-1 border-2 border-blue-300 rounded px-4 py-2 text-sm" value="张三" disabled>
+                <button class="bg-blue-500 text-white px-4 py-2 rounded text-sm">
+                  <i class="fas fa-search mr-1"></i>搜索
+                </button>
+              </div>
+              
+              <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                <p class="text-xs text-slate-600 mb-2">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  搜索结果：找到 1 条匹配记录
+                </p>
+                <div class="border-t pt-2">
+                  <p class="text-sm text-slate-700">
+                    <span class="bg-yellow-100 px-2 py-0.5 rounded">张三</span> / zhang001
+                  </p>
+                </div>
+              </div>
+            </div>
             
-            if (assignedUsers.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
+            <div class="mt-4 text-xs text-slate-600 text-center space-y-1">
+              <div><i class="fas fa-info-circle mr-1"></i>支持按工号或姓名搜索</div>
+              <div><i class="fas fa-check text-green-500 mr-1"></i>支持模糊匹配，实时筛选</div>
+            </div>
+          </div>
+          
+          <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+            <li>在搜索框中输入工号或姓名</li>
+            <li>点击搜索图标或按回车键</li>
+            <li>系统筛选匹配的用户记录</li>
+            <li>列表更新显示搜索结果</li>
+            <li>清空搜索框后显示全部用户</li>
+          </ol>
+        </div>
+        
+        <!-- 新增用户 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-user-plus text-green-500 mr-2"></i>
+            新增用户
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有新增用户权限</li>
+            <li>同时满足以上条件，否则新增按钮置灰不可点击</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-green-50 rounded-lg p-6 mb-4 border-2 border-green-200">
+            <h5 class="font-bold text-green-800 mb-4 text-center">新增用户弹窗布局示意图</h5>
             
-            container.innerHTML = `
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: #fafafa;">
-                        <tr>
-                            <th style="padding: 8px 12px; text-align: left; font-size: 14px; font-weight: 600; color: #333;">姓名</th>
-                            <th style="padding: 8px 12px; text-align: left; font-size: 14px; font-weight: 600; color: #333;">工号</th>
-                            <th style="padding: 8px 12px; text-align: left; font-size: 14px; font-weight: 600; color: #333;">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${assignedUsers.map(username => {
-                            const user = users.find(u => u.username === username);
-                            if (!user) return '';
-                            return `
-                            <tr style="border-bottom: 1px solid #f0f0f0;">
-                                <td style="padding: 8px 12px; font-size: 14px; color: #666;">${user.name}</td>
-                                <td style="padding: 8px 12px; font-size: 14px; color: #666;">${user.username}</td>
-                                <td style="padding: 8px 12px;">
-                                    <button class="remove-btn" onclick="removeAssignedUser('${username}')" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border: 1px solid #ff4d4f; border-radius: 4px; background: #fff; color: #ff4d4f; cursor: pointer; font-size: 14px; transition: all 0.3s;" onmouseover="this.style.background='#ff4d4f'; this.style.color='#fff'" onmouseout="this.style.background='#fff'; this.style.color='#ff4d4f'">
-                                        <svg style="width: 14px; height: 14px;" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                                        </svg>
-                                        <span>移除</span>
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                        }).join('')}
-                    </tbody>
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-green-300 max-w-lg mx-auto">
+              <div class="flex items-center justify-between mb-4">
+                <h6 class="font-bold text-green-700 text-lg">新增用户</h6>
+                <button class="text-slate-400">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="space-y-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">姓名 <span class="text-red-500">*</span></label>
+                  <input type="text" class="w-full border rounded px-3 py-2 text-sm" placeholder="请输入姓名" disabled>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">用户名 <span class="text-red-500">*</span></label>
+                  <input type="text" class="w-full border rounded px-3 py-2 text-sm" placeholder="请输入用户名" disabled>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">密码 <span class="text-red-500">*</span></label>
+                  <input type="password" class="w-full border rounded px-3 py-2 text-sm" placeholder="请输入密码" disabled>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">角色 <span class="text-red-500">*</span></label>
+                  <select class="w-full border rounded px-3 py-2 text-sm" disabled>
+                    <option>医生</option>
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-sm font-medium text-slate-700">工号</label>
+                    <input type="text" class="w-full border rounded px-3 py-2 text-sm" placeholder="请输入工号" disabled>
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-slate-700">手机号码</label>
+                    <input type="text" class="w-full border rounded px-3 py-2 text-sm" placeholder="请输入手机号码" disabled>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-sm font-medium text-slate-700">性别</label>
+                    <select class="w-full border rounded px-3 py-2 text-sm" disabled>
+                      <option>请选择</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-slate-700">邮箱</label>
+                    <input type="email" class="w-full border rounded px-3 py-2 text-sm" placeholder="请输入邮箱" disabled>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex justify-end gap-3 mt-6">
+                <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded text-sm">
+                  取消
+                </button>
+                <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm">
+                  确定
+                </button>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              红色*标记为必填字段，其他为可选字段
+            </div>
+          </div>
+          
+          <div class="bg-green-50 rounded-lg p-4 mb-3 border-l-4 border-green-400">
+            <h5 class="font-bold text-green-800 mb-2">情况1：成功创建用户</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>点击新增用户按钮</li>
+              <li>弹出新增用户弹窗</li>
+              <li>填写必填字段：
+                <ul class="ml-5 mt-1 space-y-1">
+                  <li>• 姓名</li>
+                  <li>• 用户名</li>
+                  <li>• 密码</li>
+                  <li>• 角色</li>
+                </ul>
+              </li>
+              <li>可选填写以下字段：
+                <ul class="ml-5 mt-1 space-y-1">
+                  <li>• 工号</li>
+                  <li>• 手机号码</li>
+                  <li>• 性别</li>
+                  <li>• 邮箱</li>
+                  <li>• 备注</li>
+                </ul>
+              </li>
+              <li>点击确定按钮</li>
+              <li>系统验证表单必填项</li>
+              <li>验证通过后创建用户</li>
+              <li>显示"保存成功"提示</li>
+              <li>关闭弹窗</li>
+              <li>用户列表刷新显示新用户</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：必填项缺失</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>点击新增用户按钮</li>
+              <li>弹出新增用户弹窗</li>
+              <li>未填写必填项直接点击确定</li>
+              <li>系统提示{缺失项名称}输入错误</li>
+              <li>对应输入框显示红色边框</li>
+              <li>输入框下方显示错误提示信息</li>
+              <li>弹窗保持打开状态</li>
+            </ol>
+          </div>
+        </div>
+        
+        <!-- 编辑用户 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-edit text-blue-500 mr-2"></i>
+            编辑用户
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有编辑用户权限</li>
+            <li>列表中存在可编辑的用户记录</li>
+            <li>同时满足以上条件，否则编辑链接点击无反应</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-blue-50 rounded-lg p-6 mb-4 border-2 border-blue-200">
+            <h5 class="font-bold text-blue-800 mb-4 text-center">编辑用户弹窗示意图</h5>
+            
+            <div class="bg-white rounded-lg shadow-lg border-2 border-blue-300 max-w-lg mx-auto">
+              <div class="flex items-center justify-between p-4 border-b">
+                <h6 class="font-bold text-blue-700 text-lg">编辑用户</h6>
+                <button class="text-slate-400">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="p-4 space-y-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">姓名 <span class="text-red-500">*</span></label>
+                  <input type="text" class="w-full border rounded px-3 py-2 text-sm" value="张三" disabled>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">用户名 <span class="text-red-500">*</span></label>
+                  <input type="text" class="w-full border rounded px-3 py-2 text-sm" value="zhang001" disabled>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">角色 <span class="text-red-500">*</span></label>
+                  <select class="w-full border rounded px-3 py-2 text-sm" disabled>
+                    <option>医生</option>
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="text-sm font-medium text-slate-700">手机号码</label>
+                    <input type="text" class="w-full border rounded px-3 py-2 text-sm" value="13812345678" disabled>
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-slate-700">性别</label>
+                    <select class="w-full border rounded px-3 py-2 text-sm" disabled>
+                      <option selected>男</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex justify-end gap-3 p-4 border-t bg-slate-50">
+                <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded text-sm">
+                  取消
+                </button>
+                <button class="px-4 py-2 bg-blue-500 text-white rounded text-sm">
+                  确定
+                </button>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              表单会自动填充当前用户信息，可直接修改
+            </div>
+          </div>
+          
+          <div class="bg-green-50 rounded-lg p-4 mb-3 border-l-4 border-green-400">
+            <h5 class="font-bold text-green-800 mb-2">情况1：成功更新用户信息</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标用户行的操作列点击编辑链接</li>
+              <li>弹出编辑用户弹窗</li>
+              <li>弹窗中预填充用户信息</li>
+              <li>修改需要更新的字段</li>
+              <li>点击确定按钮</li>
+              <li>系统验证必填项完整性</li>
+              <li>验证通过后更新用户信息</li>
+              <li>显示"保存成功"提示</li>
+              <li>关闭弹窗</li>
+              <li>用户列表刷新显示更新后的信息</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：必填项验证失败</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标用户行的操作列点击编辑链接</li>
+              <li>弹出编辑用户弹窗</li>
+              <li>删除必填项内容后点击确定</li>
+              <li>系统提示{缺失项名称}输入错误</li>
+              <li>对应输入框显示红色边框</li>
+              <li>弹窗保持打开状态</li>
+            </ol>
+          </div>
+        </div>
+        
+        <!-- 重置用户密码 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-key text-amber-500 mr-2"></i>
+            重置用户密码
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有重置密码权限</li>
+            <li>列表中存在可操作的用户记录</li>
+            <li>同时满足以上条件，否则重置链接点击无反应</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-amber-50 rounded-lg p-6 mb-4 border-2 border-amber-200">
+            <h5 class="font-bold text-amber-800 mb-4 text-center">密码重置确认弹窗示意图</h5>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-amber-300 max-w-md mx-auto">
+              <div class="flex items-center justify-between mb-4">
+                <h6 class="font-bold text-amber-800 text-lg">警告</h6>
+                <button class="text-slate-400 hover:text-slate-600">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-4">
+                <div class="flex items-start">
+                  <i class="fas fa-exclamation-triangle text-amber-500 mr-2 mt-1"></i>
+                  <p class="font-bold text-amber-800">确定重置用户密码？</p>
+                </div>
+              </div>
+              
+              <p class="text-slate-600 text-sm mb-6">
+                重置后用户的登录密码将更新为初始密码 <span class="font-bold text-amber-600">manteia123</span>
+              </p>
+              
+              <div class="flex justify-end gap-3">
+                <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 text-sm">
+                  取消
+                </button>
+                <button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                  确定
+                </button>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              弹窗用于二次确认，避免误操作
+            </div>
+          </div>
+          
+          <div class="bg-green-50 rounded-lg p-4 mb-3 border-l-4 border-green-400">
+            <h5 class="font-bold text-green-800 mb-2">情况1：成功重置密码</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标用户行的操作列点击重置链接</li>
+              <li>弹出警告确认弹窗</li>
+              <li>弹窗显示提示信息"确定重置用户密码？"</li>
+              <li>弹窗显示说明信息"重置后用户的登录密码将更新为初始密码 manteia123"</li>
+              <li>点击确定按钮</li>
+              <li>系统执行密码重置操作</li>
+              <li>显示"密码已重置为初始密码"提示</li>
+              <li>关闭确认弹窗</li>
+              <li>系统更新用户密码为manteia123</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：取消重置操作</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标用户行的操作列点击重置链接</li>
+              <li>弹出警告确认弹窗</li>
+              <li>点击取消按钮</li>
+              <li>关闭确认弹窗</li>
+              <li>密码保持不变</li>
+            </ol>
+          </div>
+        </div>
+        
+        <!-- 删除用户 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-trash text-red-500 mr-2"></i>
+            删除用户
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有删除用户权限</li>
+            <li>列表中存在可删除的用户记录</li>
+            <li>同时满足以上条件，否则删除链接点击无反应</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-red-50 rounded-lg p-6 mb-4 border-2 border-red-200">
+            <h5 class="font-bold text-red-800 mb-4 text-center">删除用户确认弹窗示意图</h5>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-red-300 max-w-md mx-auto">
+              <div class="flex items-center justify-between mb-4">
+                <h6 class="font-bold text-red-800 text-lg">提示</h6>
+                <button class="text-slate-400 hover:text-slate-600">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <p class="text-slate-700 mb-6 text-center">
+                是否确认删除当前选中账号？
+              </p>
+              
+              <div class="flex justify-end gap-3">
+                <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 text-sm">
+                  取消
+                </button>
+                <button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                  删除
+                </button>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              删除操作不可恢复，请谨慎操作
+            </div>
+          </div>
+          
+          <div class="bg-red-50 rounded-lg p-4 mb-3 border-l-4 border-red-400">
+            <h5 class="font-bold text-red-800 mb-2">情况1：成功删除用户</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标用户行的操作列点击删除链接</li>
+              <li>弹出删除确认弹窗</li>
+              <li>弹窗显示提示信息"是否确认删除当前选中账号？"</li>
+              <li>点击删除按钮</li>
+              <li>系统执行删除操作</li>
+              <li>显示"删除成功"提示</li>
+              <li>关闭确认弹窗</li>
+              <li>用户列表刷新，被删除用户不再显示</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：取消删除操作</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标用户行的操作列点击删除链接</li>
+              <li>弹出删除确认弹窗</li>
+              <li>点击取消按钮</li>
+              <li>关闭确认弹窗</li>
+              <li>用户保持不变</li>
+            </ol>
+          </div>
+        </div>
+        
+        <!-- 切换账号状态 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-toggle-on text-purple-500 mr-2"></i>
+            切换账号状态
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有账号状态管理权限</li>
+            <li>列表中存在可切换状态的用户记录</li>
+            <li>同时满足以上条件，否则切换开关无效</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-purple-50 rounded-lg p-6 mb-4 border-2 border-purple-200">
+            <h5 class="font-bold text-purple-800 mb-4 text-center">状态切换开关示意图</h5>
+            
+            <div class="grid grid-cols-2 gap-6">
+              <!-- 启用状态 -->
+              <div class="bg-white rounded-lg p-4 border-2 border-green-300">
+                <div class="font-bold text-green-700 mb-3 text-sm text-center">启用状态</div>
+                <div class="flex items-center justify-center space-x-2">
+                  <div class="relative inline-flex items-center w-14 h-8 bg-green-500 rounded-full">
+                    <span class="absolute right-1 inline-block w-6 h-6 bg-white rounded-full translate-x-0 transition-transform"></span>
+                  </div>
+                  <span class="text-sm font-bold text-green-600">启用</span>
+                </div>
+              </div>
+              
+              <!-- 禁用状态 -->
+              <div class="bg-white rounded-lg p-4 border-2 border-slate-300">
+                <div class="font-bold text-slate-700 mb-3 text-sm text-center">禁用状态</div>
+                <div class="flex items-center justify-center space-x-2">
+                  <div class="relative inline-flex items-center w-14 h-8 bg-slate-300 rounded-full">
+                    <span class="absolute left-1 inline-block w-6 h-6 bg-white rounded-full transition-transform"></span>
+                  </div>
+                  <span class="text-sm font-bold text-slate-500">禁用</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              点击开关圆球即可切换状态
+            </div>
+          </div>
+          
+          <div class="bg-green-50 rounded-lg p-4 mb-3 border-l-4 border-green-400">
+            <h5 class="font-bold text-green-800 mb-2">情况1：启用账号</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标用户行的账号状态列找到切换开关</li>
+              <li>当前开关状态为禁用（开关为灰色，圆球在左侧）</li>
+              <li>点击切换开关</li>
+              <li>系统执行启用操作</li>
+              <li>开关状态切换为启用（开关变绿色，圆球移到右侧）</li>
+              <li>开关标签显示"启用"</li>
+              <li>用户列表状态显示更新</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：禁用账号</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标用户行的账号状态列找到切换开关</li>
+              <li>当前开关状态为启用（开关为绿色，圆球在右侧）</li>
+              <li>点击切换开关</li>
+              <li>系统执行禁用操作</li>
+              <li>开关状态切换为禁用（开关变灰色，圆球移到左侧）</li>
+              <li>开关标签显示"禁用"</li>
+              <li>用户列表状态显示更新</li>
+            </ol>
+          </div>
+        </div>
+        
+      </section>
+      
+      <!-- 角色权限管理章节 -->
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center">
+          <i class="fas fa-user-shield text-purple-500 mr-3"></i>
+          角色权限管理
+        </h2>
+        
+        <!-- 角色列表展示 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-list text-purple-500 mr-2"></i>
+            角色列表展示
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有角色管理权限</li>
+            <li>同时满足以上条件</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">界面布局</h4>
+          
+          <div class="bg-purple-50 rounded-lg p-6 mb-4 border-2 border-purple-200">
+            <h5 class="font-bold text-purple-800 mb-4 text-center">角色权限管理页面整体布局示意图</h5>
+            
+            <div class="bg-white rounded-lg shadow-lg border-2 border-purple-300">
+              <!-- 顶部工具栏 -->
+              <div class="bg-slate-50 border-b p-4 flex items-center justify-end">
+                <button class="bg-purple-500 text-white px-4 py-1.5 rounded text-sm">
+                  <i class="fas fa-plus mr-1"></i>新增
+                </button>
+              </div>
+              
+              <!-- 表格区域 -->
+              <div class="p-4">
+                <table class="w-full text-sm">
+                  <thead class="bg-slate-100">
+                    <tr>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">角色名称</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">用户数量</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">状态</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">角色描述</th>
+                      <th class="px-4 py-2 text-left border-b border-slate-200">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                      <td class="px-4 py-2">医生</td>
+                      <td class="px-4 py-2">3</td>
+                      <td class="px-4 py-2">
+                        <div class="flex items-center">
+                          <div class="w-14 h-7 bg-green-500 rounded-full relative">
+                            <span class="absolute right-1 inline-block w-5 h-5 bg-white rounded-full mt-1"></span>
+                          </div>
+                          <span class="ml-2 text-xs">启用</span>
+                        </div>
+                      </td>
+                      <td class="px-4 py-2 text-slate-500">医生用户</td>
+                      <td class="px-4 py-2">
+                        <span class="text-purple-500 hover:underline text-xs mr-3">角色授权</span>
+                        <span class="text-green-500 hover:underline text-xs mr-3">分配用户</span>
+                        <span class="text-blue-500 hover:underline text-xs mr-3">修改</span>
+                        <span class="text-red-500 hover:underline text-xs">删除</span>
+                      </td>
+                    </tr>
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                      <td class="px-4 py-2">物理师</td>
+                      <td class="px-4 py-2">2</td>
+                      <td class="px-4 py-2">
+                        <div class="flex items-center">
+                          <div class="w-14 h-7 bg-green-500 rounded-full relative">
+                            <span class="absolute right-1 inline-block w-5 h-5 bg-white rounded-full mt-1"></span>
+                          </div>
+                          <span class="ml-2 text-xs">启用</span>
+                        </div>
+                      </td>
+                      <td class="px-4 py-2 text-slate-500">物理师用户</td>
+                      <td class="px-4 py-2">
+                        <span class="text-purple-500 hover:underline text-xs mr-3">角色授权</span>
+                        <span class="text-green-500 hover:underline text-xs mr-3">分配用户</span>
+                        <span class="text-blue-500 hover:underline text-xs mr-3">修改</span>
+                        <span class="text-red-500 hover:underline text-xs">删除</span>
+                      </td>
+                    </tr>
+                  </tbody>
                 </table>
-            `;
-        }
-
-        // 移除单个已分配用户
-        function removeAssignedUser(username) {
-            assignedUsers = assignedUsers.filter(u => u !== username);
-            renderAssignedUsers();
-            renderAvailableUsers();
-        }
-
-        // 移除所有已分配用户
-        function removeAllAssignedUsers() {
-            assignedUsers = [];
-            renderAssignedUsers();
-            renderAvailableUsers();
-        }
-
-        // 搜索过滤用户
-        function filterAvailableUsers() {
-            renderAvailableUsers();
-        }
-
-        // 编辑角色
-        let editingRoleIndex = -1;
-
-        function editRole(index) {
-            editingRoleIndex = index;
-            const role = roles[index];
-            document.getElementById('editRoleName').value = role.name;
-            document.getElementById('editRoleDesc').value = role.desc || '';
-            clearEditRoleErrors();
-            openModal('editRoleModal');
-        }
-
-        // 清除编辑角色错误状态
-        function clearEditRoleErrors() {
-            const roleNameInput = document.getElementById('editRoleName');
-            const roleNameError = document.getElementById('editRoleNameError');
-            if (roleNameInput) {
-                roleNameInput.classList.remove('error');
-            }
-            if (roleNameError) {
-                roleNameError.textContent = '';
-            }
-        }
-
-        // 更新角色
-        function updateRole() {
-            // 验证
-            const roleName = document.getElementById('editRoleName').value.trim();
-            if (!roleName) {
-                document.getElementById('editRoleName').classList.add('error');
-                document.getElementById('editRoleNameError').textContent = '请输入角色名称';
-                return;
-            }
-
-            if (editingRoleIndex >= 0 && editingRoleIndex < roles.length) {
-                roles[editingRoleIndex].name = roleName;
-                roles[editingRoleIndex].desc = document.getElementById('editRoleDesc').value.trim();
-                renderRoles();
-                alert('修改成功！');
-                closeModal('editRoleModal');
-                editingRoleIndex = -1;
-            }
-        }
-
-        // 删除角色
-        let deletingRoleName = '';
-
-        function deleteRole(roleName) {
-            deletingRoleName = roleName;
-            openModal('deleteRoleModal');
-        }
-
-        function confirmDeleteRole() {
-            roles = roles.filter(role => role.name !== deletingRoleName);
-            renderRoles();
-            // 更新总数
-            document.getElementById('totalRoles').textContent = roles.length;
-            alert('删除成功！');
-            closeModal('deleteRoleModal');
-            deletingRoleName = '';
-        }
-
-        // 权限数据定义
-        const permissionModules = [
-            {
-                name: '靶区勾画',
-                expanded: false,
-                selected: false,
-                active: false,
-                permissions: [
-                    { name: '画笔', checked: false },
-                    { name: '画刷', checked: false },
-                    { name: '橡皮擦', checked: false },
-                    { 
-                        name: '多边形工具', 
-                        checked: false,
-                        expanded: false,
-                        children: [
-                            { name: '手动绘制', checked: false },
-                            { name: '自动识别', checked: false }
-                        ]
-                    },
-                    { name: '圆形工具', checked: false },
-                    { name: '矩形工具', checked: false }
-                ]
-            },
-            {
-                name: '计划设计',
-                expanded: false,
-                selected: false,
-                active: false,
-                permissions: [
-                    { name: '播放MLC', checked: false },
-                    { name: '射束适形', checked: false },
-                    { name: '剂量率设置', checked: false },
-                    { name: '机架角设置', checked: false },
-                    { name: '准直器设置', checked: false }
-                ]
-            },
-            {
-                name: '计划优化',
-                expanded: false,
-                selected: false,
-                active: false,
-                permissions: [
-                    { name: '计划优化', checked: false },
-                    { name: '剂量计算', checked: false },
-                    { name: '目标函数设置', checked: false },
-                    { name: '约束条件设置', checked: false },
-                    { name: '优化算法选择', checked: false }
-                ]
-            },
-            {
-                name: '剂量验证',
-                expanded: false,
-                selected: false,
-                active: false,
-                permissions: [
-                    { name: '剂量计算', checked: false },
-                    { name: '剂量分布', checked: false },
-                    { name: 'DVH分析', checked: false },
-                    { name: '适形度分析', checked: false }
-                ]
-            },
-            {
-                name: '报告生成',
-                expanded: false,
-                selected: false,
-                active: false,
-                permissions: [
-                    { name: '计划报告', checked: false },
-                    { name: '剂量报告', checked: false },
-                    { name: '图表导出', checked: false },
-                    { name: 'PDF导出', checked: false }
-                ]
-            },
-            {
-                name: '患者管理',
-                expanded: false,
-                selected: false,
-                active: false,
-                permissions: [
-                    { name: '患者信息查看', checked: false },
-                    { name: '患者信息编辑', checked: false },
-                    { name: '患者导入', checked: false },
-                    { name: '患者导出', checked: false }
-                ]
-            }
-        ];
-
-        // 角色授权
-        let currentAuthingRoleName = '';
-        let currentAuthingRoleIndex = -1;
-        let currentActiveModuleIndex = 0; // 当前激活的模块索引
-
-        function openRoleAuth(roleName, index) {
-            currentAuthingRoleName = roleName;
-            currentAuthingRoleIndex = index;
-            
-            // 默认激活第一个模块
-            permissionModules.forEach((module, idx) => {
-                module.active = (idx === 0);
-            });
-            
-            renderModuleNav();
-            renderPermissionTree();
-            openModal('roleAuthModal');
-        }
-
-        // 渲染左侧模块导航
-        function renderModuleNav() {
-            const container = document.getElementById('moduleNav');
-            container.innerHTML = permissionModules.map((module, index) => `
-                <div class="module-nav-item ${module.active ? 'active' : ''}" onclick="toggleModuleNav(${index})">
-                    <span class="module-nav-empty"></span>
-                    <span class="module-nav-name">${module.name}</span>
-                    <input type="checkbox" class="module-nav-checkbox" 
-                           ${module.selected ? 'checked' : ''}
-                           onclick="event.stopPropagation(); toggleModuleSelect(${index})"
-                           onchange="event.stopPropagation(); toggleModuleSelect(${index})">
+              </div>
+              
+              <!-- 分页控件 -->
+              <div class="bg-slate-50 border-t px-4 py-3 flex items-center justify-between">
+                <div class="text-sm text-slate-600">共<span class="font-bold mx-1">5</span>条</div>
+                <div class="flex items-center space-x-2">
+                  <button class="px-3 py-1 border rounded text-sm bg-white">上一页</button>
+                  <button class="px-3 py-1 bg-purple-500 text-white rounded text-sm">1</button>
+                  <button class="px-3 py-1 border rounded text-sm bg-white">下一页</button>
                 </div>
-            `).join('');
-        }
-
-        // 点击模块导航（展开/激活）
-        function toggleModuleNav(index) {
-            permissionModules.forEach((m, i) => {
-                m.active = (i === index);
-            });
-            currentActiveModuleIndex = index;
-            renderModuleNav();
-            renderPermissionTree();
-        }
-
-
-        // 点击复选框（全选/取消该模块）
-        function toggleModuleSelect(index) {
-            const module = permissionModules[index];
-            const shouldSelect = !module.selected;
+              </div>
+            </div>
             
-            // 全选/取消该模块的所有权限
-            selectAllPermissionsInModule(module, shouldSelect);
-            module.selected = shouldSelect;
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              页面包含：新增按钮、角色列表、状态开关、操作按钮、分页控件
+            </div>
+          </div>
+          
+          <div class="bg-purple-50 rounded-lg p-4 mb-4">
+            <h5 class="font-bold text-purple-800 mb-3">角色列表字段说明</h5>
+            <div class="overflow-x-auto">
+              <table class="min-w-full bg-white border border-slate-200 rounded-lg">
+                <thead class="bg-slate-100">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-slate-700 font-bold">字段名称</th>
+                    <th class="px-4 py-2 text-left text-slate-700 font-bold">说明</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">角色名称</td>
+                    <td class="px-4 py-2 text-slate-700">角色的名称（如医生、主任医生、物理师等）</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">用户数量</td>
+                    <td class="px-4 py-2 text-slate-700">分配到此角色的用户数量</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">状态</td>
+                    <td class="px-4 py-2 text-slate-700">启用/禁用切换开关</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">角色描述</td>
+                    <td class="px-4 py-2 text-slate-700">角色的功能描述信息</td>
+                  </tr>
+                  <tr class="border-t border-slate-200">
+                    <td class="px-4 py-2 text-slate-700">操作</td>
+                    <td class="px-4 py-2 text-slate-700">角色授权、分配用户、修改、删除按钮</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <ul class="space-y-2 text-slate-700">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>列表顶部显示新增按钮</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>列表底部显示分页控件</span>
+            </li>
+          </ul>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+            <li>进入角色权限页面</li>
+            <li>系统自动加载角色列表数据</li>
+            <li>显示共{总数}条记录</li>
+            <li>列表支持分页浏览，默认每页显示20条记录</li>
+          </ol>
+        </div>
+        
+        <!-- 新增角色 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-user-plus text-green-500 mr-2"></i>
+            新增角色
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有新增角色权限</li>
+            <li>同时满足以上条件，否则新增按钮置灰不可点击</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-purple-50 rounded-lg p-6 mb-4 border-2 border-purple-200">
+            <h5 class="font-bold text-purple-800 mb-4 text-center">新增角色弹窗布局示意图</h5>
             
-            updateModuleSelectState(index);
-            renderModuleNav();
-            renderPermissionTree();
-        }
-
-        // 递归选择模块内所有权限
-        function selectAllPermissionsInModule(module, checked) {
-            module.permissions.forEach(perm => {
-                perm.checked = checked;
-                if (perm.children) {
-                    perm.children.forEach(child => {
-                        child.checked = checked;
-                    });
-                }
-            });
-        }
-
-        // 更新模块选择状态
-        function updateModuleSelectState(index) {
-            const module = permissionModules[index];
-            const allChecked = module.permissions.every(p => {
-                return p.checked && (!p.children || p.children.every(c => c.checked));
-            });
-            module.selected = allChecked;
-        }
-
-        // 渲染右侧权限树
-        function renderPermissionTree() {
-            const container = document.getElementById('permissionTree');
-            const activeModule = permissionModules[currentActiveModuleIndex];
-            
-            if (!activeModule) return;
-            
-            container.innerHTML = `
-                <div style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px;">
-                    ${activeModule.name}
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-purple-300 max-w-md mx-auto">
+              <div class="flex items-center justify-between mb-4">
+                <h6 class="font-bold text-purple-700 text-lg">新增</h6>
+                <button class="text-slate-400">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="space-y-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">角色名称 <span class="text-red-500">*</span></label>
+                  <input type="text" class="w-full border rounded px-3 py-2 text-sm" placeholder="请输入角色名称" disabled>
                 </div>
-                ${renderPermissionItems(activeModule.permissions, '')}
-            `;
-        }
-
-        // 递归渲染权限项
-        function renderPermissionItems(permissions, prefix) {
-            return permissions.map((perm, index) => {
-                const hasChildren = perm.children && perm.children.length > 0;
-                const itemId = prefix ? `${prefix}_${index}` : `perm_${currentActiveModuleIndex}_${index}`;
-                
-                let childrenHtml = '';
-                if (hasChildren && perm.expanded) {
-                    childrenHtml = `
-                        <div class="permission-tree-children">
-                            ${renderPermissionItems(perm.children, itemId)}
-                        </div>
-                    `;
-                }
-                
-                // 判断是否有子项，如果有则显示箭头
-                let arrowSvg = '';
-                if (hasChildren) {
-                    arrowSvg = `
-                        <svg class="permission-tree-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="transform: ${perm.expanded ? 'rotate(90deg)' : 'rotate(0deg)'}; transition: transform 0.2s;">
-                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
-                        </svg>
-                    `;
-                }
-                
-                return `
-                    <div class="permission-tree-item">
-                        <div class="permission-tree-label" onclick="togglePermissionItem('${itemId}', ${hasChildren})">
-                            <span class="permission-tree-icon ${perm.expanded ? 'expanded' : ''}" 
-                                  style="width: ${hasChildren ? '16px' : '0'}; display: ${hasChildren ? 'inline-block' : 'none'}">
-                                ${arrowSvg}
-                            </span>
-                            <input type="checkbox" 
-                                   class="permission-tree-checkbox"
-                                   ${perm.checked ? 'checked' : ''}
-                                   onclick="event.stopPropagation(); togglePermissionCheck('${itemId}')"
-                                   onchange="event.stopPropagation(); togglePermissionCheck('${itemId}')">
-                            <span class="permission-tree-name">${perm.name}</span>
-                        </div>
-                        ${childrenHtml}
+                <div>
+                  <label class="text-sm font-medium text-slate-700">角色描述</label>
+                  <input type="text" class="w-full border rounded px-3 py-2 text-sm" placeholder="请输入角色描述" disabled>
+                </div>
+              </div>
+              
+              <div class="flex justify-end gap-3 mt-6">
+                <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded text-sm">
+                  取消
+                </button>
+                <button class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm">
+                  确定
+                </button>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              角色名称为必填项，角色描述为可选项
+            </div>
+          </div>
+          
+          <div class="bg-green-50 rounded-lg p-4 mb-3 border-l-4 border-green-400">
+            <h5 class="font-bold text-green-800 mb-2">情况1：成功创建角色</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>点击新增按钮</li>
+              <li>弹出新增弹窗</li>
+              <li>填写角色名称</li>
+              <li>可选填写角色描述</li>
+              <li>点击确定按钮</li>
+              <li>系统验证角色名称必填项</li>
+              <li>验证通过后创建角色</li>
+              <li>显示"保存成功"提示</li>
+              <li>关闭弹窗</li>
+              <li>角色列表刷新显示新角色</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：角色名称缺失</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>点击新增按钮</li>
+              <li>弹出新增弹窗</li>
+              <li>未填写角色名称直接点击确定</li>
+              <li>系统提示"请输入角色名称"</li>
+              <li>角色名称输入框显示红色边框</li>
+              <li>输入框下方显示错误提示信息</li>
+              <li>弹窗保持打开状态</li>
+            </ol>
+          </div>
+        </div>
+        
+        <!-- 修改角色 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-edit text-blue-500 mr-2"></i>
+            修改角色
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有修改角色权限</li>
+            <li>列表中存在可修改的角色记录</li>
+            <li>同时满足以上条件，否则修改链接点击无反应</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-blue-50 rounded-lg p-6 mb-4 border-2 border-blue-200">
+            <h5 class="font-bold text-blue-800 mb-4 text-center">修改角色弹窗示意图</h5>
+            
+            <div class="bg-white rounded-lg shadow-lg border-2 border-blue-300 max-w-md mx-auto">
+              <div class="flex items-center justify-between p-4 border-b">
+                <h6 class="font-bold text-blue-700 text-lg">修改</h6>
+                <button class="text-slate-400">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="p-4 space-y-3">
+                <div>
+                  <label class="text-sm font-medium text-slate-700">角色名称 <span class="text-red-500">*</span></label>
+                  <input type="text" class="w-full border rounded px-3 py-2 text-sm" value="医生" disabled>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-slate-700">角色描述</label>
+                  <input type="text" class="w-full border rounded px-3 py-2 text-sm" value="医生用户" disabled>
+                </div>
+              </div>
+              
+              <div class="flex justify-end gap-3 p-4 border-t bg-slate-50">
+                <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded text-sm">
+                  取消
+                </button>
+                <button class="px-4 py-2 bg-blue-500 text-white rounded text-sm">
+                  确定
+                </button>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              表单已填充当前角色信息，可修改名称和描述
+            </div>
+          </div>
+          
+          <div class="bg-green-50 rounded-lg p-4 mb-3 border-l-4 border-green-400">
+            <h5 class="font-bold text-green-800 mb-2">情况1：成功更新角色信息</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标角色行的操作列点击修改链接</li>
+              <li>弹出修改弹窗</li>
+              <li>弹窗中预填充角色信息</li>
+              <li>修改需要更新的字段</li>
+              <li>点击确定按钮</li>
+              <li>系统验证角色名称必填项</li>
+              <li>验证通过后更新角色信息</li>
+              <li>显示"修改成功"提示</li>
+              <li>关闭弹窗</li>
+              <li>角色列表刷新显示更新后的信息</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：角色名称验证失败</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标角色行的操作列点击修改链接</li>
+              <li>弹出修改弹窗</li>
+              <li>删除角色名称后点击确定</li>
+              <li>系统提示"请输入角色名称"</li>
+              <li>角色名称输入框显示红色边框</li>
+              <li>弹窗保持打开状态</li>
+            </ol>
+          </div>
+        </div>
+        
+        <!-- 删除角色 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-trash text-red-500 mr-2"></i>
+            删除角色
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有删除角色权限</li>
+            <li>列表中存在可删除的角色记录</li>
+            <li>同时满足以上条件，否则删除链接点击无反应</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-red-50 rounded-lg p-6 mb-4 border-2 border-red-200">
+            <h5 class="font-bold text-red-800 mb-4 text-center">删除角色确认弹窗示意图</h5>
+            
+            <div class="bg-white rounded-lg shadow-lg p-6 border border-red-300 max-w-md mx-auto">
+              <div class="flex items-center justify-between mb-4">
+                <h6 class="font-bold text-red-800 text-lg">提示</h6>
+                <button class="text-slate-400 hover:text-slate-600">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <p class="text-slate-700 mb-6 text-center">
+                是否删除该角色？
+              </p>
+              
+              <div class="flex justify-end gap-3">
+                <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 text-sm">
+                  取消
+                </button>
+                <button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                  删除
+                </button>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              删除角色前请确保该角色下没有用户
+            </div>
+          </div>
+          
+          <div class="bg-red-50 rounded-lg p-4 mb-3 border-l-4 border-red-400">
+            <h5 class="font-bold text-red-800 mb-2">情况1：成功删除角色</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标角色行的操作列点击删除链接</li>
+              <li>弹出删除确认弹窗</li>
+              <li>弹窗显示提示信息"是否删除该角色？"</li>
+              <li>点击删除按钮</li>
+              <li>系统执行删除操作</li>
+              <li>显示"删除成功"提示</li>
+              <li>关闭确认弹窗</li>
+              <li>角色列表刷新，被删除角色不再显示</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：取消删除操作</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标角色行的操作列点击删除链接</li>
+              <li>弹出删除确认弹窗</li>
+              <li>点击取消按钮</li>
+              <li>关闭确认弹窗</li>
+              <li>角色保持不变</li>
+            </ol>
+          </div>
+        </div>
+        
+        <!-- 角色授权 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-user-check text-purple-500 mr-2"></i>
+            角色授权
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有角色授权权限</li>
+            <li>列表中存在可授权的角色记录</li>
+            <li>同时满足以上条件，否则角色授权链接点击无反应</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">界面布局</h4>
+          
+          <div class="bg-purple-50 rounded-lg p-6 mb-4 border-2 border-purple-200">
+            <h5 class="font-bold text-purple-800 mb-4 text-center">角色授权弹窗布局示意图</h5>
+            
+            <div class="grid grid-cols-12 gap-4">
+              <!-- 左侧模块导航 -->
+              <div class="col-span-4 bg-white rounded-lg p-3 border-2 border-purple-300">
+                <div class="font-bold text-purple-700 mb-2 text-sm">模块导航栏</div>
+                <div class="space-y-2">
+                  <div class="bg-blue-50 p-2 rounded border border-blue-200">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-blue-700">靶区勾画</span>
+                      <i class="fas fa-square text-blue-500 text-xs"></i>
                     </div>
-                `;
-            }).join('');
-        }
-
-        // 点击权限项（展开/折叠）
-        function togglePermissionItem(itemId, hasChildren) {
-            if (!hasChildren) return;
+                  </div>
+                  <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-slate-600">计划设计</span>
+                      <i class="far fa-square text-slate-400 text-xs"></i>
+                    </div>
+                  </div>
+                  <div class="bg-slate-50 p-2 rounded border border-slate-200">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm text-slate-600">计划优化</span>
+                      <i class="far fa-square text-slate-400 text-xs"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 右侧权限树 -->
+              <div class="col-span-8 bg-white rounded-lg p-3 border-2 border-purple-300">
+                <div class="font-bold text-purple-700 mb-2 text-sm">权限树</div>
+                <div class="space-y-1">
+                  <div class="flex items-center space-x-2 p-2 bg-slate-50 rounded">
+                    <i class="fas fa-square-check text-green-500 text-xs"></i>
+                    <span class="text-sm">画笔</span>
+                  </div>
+                  <div class="flex items-center space-x-2 p-2 ml-4 bg-slate-50 rounded">
+                    <i class="fas fa-caret-right text-slate-400 text-xs"></i>
+                    <i class="far fa-square text-slate-400 text-xs"></i>
+                    <span class="text-sm">画刷</span>
+                  </div>
+                  <div class="flex items-center space-x-2 p-2 ml-4 bg-slate-50 rounded">
+                    <i class="fas fa-caret-right text-slate-400 text-xs"></i>
+                    <i class="far fa-square text-slate-400 text-xs"></i>
+                    <span class="text-sm">橡皮擦</span>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            const perm = findPermissionById(currentActiveModuleIndex, itemId);
-            if (perm && perm.children) {
-                perm.expanded = !perm.expanded;
-                renderPermissionTree();
-            }
-        }
-
-        // 切换权限复选框
-        function togglePermissionCheck(itemId) {
-            const perm = findPermissionById(currentActiveModuleIndex, itemId);
-            if (perm) {
-                perm.checked = !perm.checked;
-                
-                // 如果有子项，同步子项状态
-                if (perm.children) {
-                    perm.children.forEach(child => {
-                        child.checked = perm.checked;
-                    });
-                }
-                
-                // 更新模块选择状态
-                updateModuleSelectState(currentActiveModuleIndex);
-                renderModuleNav();
-                renderPermissionTree();
-            }
-        }
-
-        // 根据ID查找权限
-        function findPermissionById(moduleIndex, itemId) {
-            const module = permissionModules[moduleIndex];
-            if (!module) return null;
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              左侧点击模块切换，右侧显示对应模块的权限树
+            </div>
+          </div>
+          
+          <ul class="space-y-2 text-slate-700">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>弹窗左侧显示模块导航栏，每个模块项右侧显示复选框</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>点击模块项高亮显示该模块，右侧同步显示该模块的权限树</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>权限树支持展开折叠，每个权限项显示复选框</span>
+            </li>
+          </ul>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+            <li>在目标角色行的操作列点击角色授权链接</li>
+            <li>弹出角色授权弹窗</li>
+            <li>弹窗默认选中第一个模块</li>
+            <li>右侧显示该模块的权限列表</li>
+            <li>点击模块复选框实现该模块权限全选或取消全选</li>
+            <li>点击权限项复选框设置单个权限</li>
+            <li>点击带子项的权限可展开查看子权限</li>
+            <li>有子项的权限被选中后子权限自动选中</li>
+            <li>点击确定按钮</li>
+            <li>系统保存角色权限配置</li>
+            <li>显示"授权成功"提示并显示已选择权限总数</li>
+            <li>关闭授权弹窗</li>
+          </ol>
+        </div>
+        
+        <!-- 分配用户 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-users-cog text-green-500 mr-2"></i>
+            分配用户
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有分配用户权限</li>
+            <li>列表中存在可分配的角色记录</li>
+            <li>系统中有可分配的用户</li>
+            <li>同时满足以上条件，否则分配用户链接点击无反应</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">界面布局</h4>
+          
+          <div class="bg-green-50 rounded-lg p-6 mb-4 border-2 border-green-200">
+            <h5 class="font-bold text-green-800 mb-4 text-center">分配用户双列表布局示意图</h5>
             
-            // 提取路径：去掉前缀，只保留索引路径
-            const parts = itemId.split('_').slice(2);
+            <div class="grid grid-cols-2 gap-4">
+              <!-- 左侧可选用户列表 -->
+              <div class="bg-white rounded-lg p-3 border-2 border-green-300">
+                <div class="font-bold text-green-700 mb-2 text-sm">可选用户</div>
+                
+                <!-- 搜索框 -->
+                <div class="mb-2 flex gap-1">
+                  <input type="text" class="flex-1 text-xs border rounded px-2 py-1" value="搜索用户" disabled>
+                  <button class="bg-blue-500 text-white px-2 text-xs rounded" disabled>
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+                
+                <!-- 用户列表 -->
+                <div class="space-y-1 text-xs">
+                  <div class="bg-slate-100 p-2 rounded border flex items-center gap-2">
+                    <i class="far fa-square text-slate-400"></i>
+                    <span>张三 / zhang001</span>
+                  </div>
+                  <div class="bg-blue-50 p-2 rounded border border-blue-200 flex items-center gap-2">
+                    <i class="fas fa-square-check text-green-500"></i>
+                    <span class="text-blue-700">李四 / li002</span>
+                  </div>
+                  <div class="bg-slate-100 p-2 rounded border flex items-center gap-2">
+                    <i class="far fa-square text-slate-400"></i>
+                    <span>王五 / wang003</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 右侧已分配用户列表 -->
+              <div class="bg-white rounded-lg p-3 border-2 border-green-300">
+                <div class="font-bold text-green-700 mb-2 text-sm flex items-center justify-between">
+                  <span>已分配用户</span>
+                  <button class="bg-red-500 text-white px-2 py-1 text-xs rounded" disabled>
+                    全部移除
+                  </button>
+                </div>
+                
+                <!-- 用户列表 -->
+                <div class="space-y-1 text-xs">
+                  <div class="bg-blue-50 p-2 rounded border border-blue-200 flex items-center justify-between">
+                    <span class="text-blue-700">李四 / li002</span>
+                    <button class="text-red-500 text-xs">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            // 递归查找
-            function findInTree(permissions, pathIndex) {
-                if (pathIndex >= parts.length) return null;
-                
-                const index = parseInt(parts[pathIndex]);
-                if (index >= permissions.length) return null;
-                
-                const perm = permissions[index];
-                
-                if (pathIndex === parts.length - 1) {
-                    // 最后一级，返回这个权限
-                    return perm;
-                } else {
-                    // 继续往下查找
-                    if (perm.children && perm.children.length > 0) {
-                        return findInTree(perm.children, pathIndex + 1);
-                    }
-                }
-                
-                return null;
-            }
+            <div class="mt-4 text-xs text-slate-600 text-center">
+              <i class="fas fa-info-circle mr-1"></i>
+              勾选左侧用户自动移动到右侧，点击移除可将用户移回左侧
+            </div>
+          </div>
+          
+          <ul class="space-y-2 text-slate-700">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>弹窗分为左右两个列表区域，左侧显示可选用户，右侧显示已分配用户</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>左侧列表顶部提供搜索框，右侧列表顶部提供全部移除按钮</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>每个列表包含复选框列、姓名列、工号列</span>
+            </li>
+          </ul>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+            <li>在目标角色行的操作列点击分配用户链接</li>
+            <li>弹出分配用户弹窗</li>
+            <li>弹窗左侧加载可选用户列表</li>
+            <li>弹窗右侧显示已分配用户列表，初始为空</li>
+            <li>在左侧列表输入搜索关键词并点击搜索</li>
+            <li>左侧列表更新显示搜索结果</li>
+            <li>勾选左侧用户复选框</li>
+            <li>勾选的用户自动移动到右侧列表</li>
+            <li>右侧已分配列表显示该用户</li>
+            <li>点击右侧列表的移除按钮</li>
+            <li>该用户从已分配列表移除</li>
+            <li>点击全部移除按钮</li>
+            <li>右侧所有用户移除完毕</li>
+            <li>点击确定按钮</li>
+            <li>系统保存用户分配结果</li>
+            <li>关闭分配用户弹窗</li>
+            <li>角色列表中的用户数量更新</li>
+          </ol>
+        </div>
+        
+        <!-- 切换角色状态 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-toggle-on text-purple-500 mr-2"></i>
+            切换角色状态
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>具有角色状态管理权限</li>
+            <li>列表中存在可切换状态的角色记录</li>
+            <li>同时满足以上条件，否则切换开关无效</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          
+          <div class="bg-purple-50 rounded-lg p-6 mb-4 border-2 border-purple-200">
+            <h5 class="font-bold text-purple-800 mb-4 text-center">角色状态切换示意图</h5>
             
-            return findInTree(module.permissions, 0);
-        }
-
-        // 保存权限
-        function saveRoleAuth() {
-            let totalCount = 0;
-            permissionModules.forEach(module => {
-                module.permissions.forEach(perm => {
-                    if (perm.checked) totalCount++;
-                    if (perm.children) {
-                        perm.children.forEach(child => {
-                            if (child.checked) totalCount++;
-                        });
-                    }
-                });
-            });
+            <div class="bg-white rounded-lg shadow-lg border-2 border-purple-300 p-4">
+              <div class="text-sm font-bold text-purple-700 mb-3">角色列表中的状态列</div>
+              
+              <div class="space-y-3">
+                <!-- 启用状态示例 -->
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded border">
+                  <div class="flex items-center space-x-3">
+                    <span class="text-sm font-medium">医生</span>
+                    <span class="text-xs text-slate-500">（3人）</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <div class="relative inline-flex items-center w-14 h-8 bg-green-500 rounded-full cursor-pointer">
+                      <span class="absolute right-1 inline-block w-6 h-6 bg-white rounded-full transition-all"></span>
+                    </div>
+                    <span class="text-xs font-bold text-green-600">启用</span>
+                    <i class="fas fa-check-circle text-green-500 text-sm"></i>
+                  </div>
+                </div>
+                
+                <!-- 禁用状态示例 -->
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded border">
+                  <div class="flex items-center space-x-3">
+                    <span class="text-sm font-medium">测试角色</span>
+                    <span class="text-xs text-slate-500">（0人）</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <div class="relative inline-flex items-center w-14 h-8 bg-slate-300 rounded-full cursor-pointer">
+                      <span class="absolute left-1 inline-block w-6 h-6 bg-white rounded-full transition-all"></span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500">禁用</span>
+                    <i class="fas fa-times-circle text-slate-400 text-sm"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            alert(`授权成功！已选择 ${totalCount} 项权限`);
-            closeModal('roleAuthModal');
-        }
-
-        // 切换侧边栏
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('collapsed');
-        }
-
-        // 保存设置
-        function saveSettings() {
-            const timeout = document.getElementById('timeoutInput').value;
-            alert('设置已保存！超时时间已设置为 ' + timeout + ' 分钟');
-        }
-
-        // 分页
-        function changePage(direction, type) {
-            console.log('Change page:', direction, type);
-        }
-
-        // 页面加载完成后初始化
-        initPage();
-
-        // 点击遮罩层关闭弹窗
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal-overlay')) {
-                e.target.classList.remove('active');
-            }
-        });
-    </script>
+            <div class="mt-4 text-xs text-slate-600 text-center space-y-1">
+              <div><i class="fas fa-info-circle mr-1"></i>点击开关即可切换角色启用/禁用状态</div>
+              <div><i class="fas fa-check text-green-500 mr-1"></i>禁用的角色无法分配给新用户</div>
+            </div>
+          </div>
+          
+          <div class="bg-green-50 rounded-lg p-4 mb-3 border-l-4 border-green-400">
+            <h5 class="font-bold text-green-800 mb-2">情况1：启用角色</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标角色行的状态列找到切换开关</li>
+              <li>当前开关状态为禁用</li>
+              <li>点击切换开关</li>
+              <li>系统执行启用操作</li>
+              <li>开关状态切换为启用</li>
+              <li>开关标签显示"启用"</li>
+              <li>角色列表状态显示更新</li>
+            </ol>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+            <h5 class="font-bold text-orange-800 mb-2">情况2：禁用角色</h5>
+            <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+              <li>在目标角色行的状态列找到切换开关</li>
+              <li>当前开关状态为启用</li>
+              <li>点击切换开关</li>
+              <li>系统执行禁用操作</li>
+              <li>开关状态切换为禁用</li>
+              <li>开关标签显示"禁用"</li>
+              <li>角色列表状态显示更新</li>
+            </ol>
+          </div>
+        </div>
+        
+      </section>
+      
+      <!-- 系统设置章节 -->
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center">
+          <i class="fas fa-cog text-slate-600 mr-3"></i>
+          系统设置
+        </h2>
+        
+        <!-- 超时登出设置 -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6 card avoid-break">
+          <h3 class="text-xl font-bold text-slate-800 mb-4">
+            <i class="fas fa-clock text-orange-500 mr-2"></i>
+            超时登出设置
+          </h3>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">使用前提</h4>
+          <ol class="space-y-2 text-slate-700 mb-4 list-decimal list-inside">
+            <li>用户已登录系统</li>
+            <li>用户身份为超级管理员</li>
+            <li>同时满足以上条件，否则无法进入设置页面</li>
+          </ol>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">界面布局</h4>
+          
+          <div class="bg-orange-50 rounded-lg p-6 mb-4 border-2 border-orange-200">
+            <h5 class="font-bold text-orange-800 mb-4 text-center">系统设置页面布局示意图</h5>
+            
+            <div class="bg-white rounded-lg shadow-lg border-2 border-orange-300 p-6">
+              <h6 class="font-bold text-orange-700 text-lg mb-4">超时登出设置</h6>
+              
+              <div class="space-y-4">
+                <!-- 功能说明 -->
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+                  <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-500 mr-2 mt-1"></i>
+                    <div>
+                      <p class="text-sm font-medium text-blue-800 mb-1">功能说明</p>
+                      <p class="text-xs text-slate-600">
+                        当用户处于登录状态但连续未操作达到设定时间后，系统将自动登出该用户。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 超时时间设置 -->
+                <div class="space-y-2">
+                  <label class="text-sm font-medium text-slate-700">超时时间</label>
+                  <div class="flex items-center space-x-3">
+                    <input type="number" class="border-2 border-orange-300 rounded px-4 py-2 text-sm w-32" value="30" disabled>
+                    <span class="text-slate-600 text-sm">分钟</span>
+                  </div>
+                  <p class="text-xs text-slate-500">
+                    建议范围：5-120分钟，默认30分钟。设置后将对所有用户生效。
+                  </p>
+                </div>
+                
+                <!-- 保存按钮 -->
+                <div class="pt-2">
+                  <button class="bg-orange-500 text-white px-6 py-2 rounded text-sm font-medium">
+                    <i class="fas fa-save mr-1"></i>保存设置
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-xs text-slate-600 text-center space-y-1">
+              <div><i class="fas fa-info-circle mr-1"></i>仅超级管理员可访问此设置页面</div>
+              <div><i class="fas fa-check text-green-500 mr-1"></i>修改后对所有用户的新登录会话生效</div>
+            </div>
+          </div>
+          
+          <ul class="space-y-2 text-slate-700">
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>页面显示超时登出设置说明</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>设置说明：当用户处于登录状态但连续未操作达到设定时间后，系统将自动登出该用户</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>超时时间输入框，支持输入5-120之间的数值</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>输入框右侧显示"分钟"单位说明</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>默认值为30分钟</span>
+            </li>
+            <li class="flex items-start">
+              <i class="fas fa-check text-green-500 mr-2 mt-1"></i>
+              <span>页面底部显示保存设置按钮</span>
+            </li>
+          </ul>
+          
+          <h4 class="text-lg font-bold text-slate-700 mb-3">操作流程</h4>
+          <ol class="space-y-2 text-slate-700 list-decimal list-inside">
+            <li>进入系统设置页面</li>
+            <li>页面显示当前超时时间设置</li>
+            <li>在超时时间输入框中输入新的时间值</li>
+            <li>输入值必须在5-120之间</li>
+            <li>点击保存设置按钮</li>
+            <li>系统验证输入值合法性</li>
+            <li>验证通过后保存设置</li>
+            <li>显示"设置已保存！超时时间已设置为 {时间} 分钟"提示</li>
+            <li>所有用户的新登录会话将使用新的超时设置</li>
+          </ol>
+        </div>
+        
+      </section>
+      
+    </main>
+  </div>
 </body>
 </html>
+
