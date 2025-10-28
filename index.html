@@ -766,6 +766,113 @@
             display: flex;
             flex-direction: column;
         }
+
+        /* 角色授权弹窗样式 */
+        .module-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+            position: relative;
+        }
+
+        .module-nav-item:hover {
+            background: #f5f5f5;
+        }
+
+        .module-nav-item.active {
+            background: #e6f7ff;
+            border-left: 3px solid #1890ff;
+        }
+
+        .module-nav-expand {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .module-nav-expand.expanded {
+            transform: rotate(90deg);
+        }
+
+        .module-nav-checkbox {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .module-nav-name {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+            margin-left: 8px;
+        }
+
+        .module-nav-empty {
+            width: 16px;
+            margin-right: 8px;
+        }
+
+        .module-nav-item.active .module-nav-name {
+            color: #1890ff;
+            font-weight: 500;
+        }
+
+        .permission-tree-item {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .permission-tree-item:hover {
+            background: #fafafa;
+        }
+
+        .permission-tree-item.active {
+            background: #e6f7ff;
+        }
+
+        .permission-tree-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .permission-tree-icon {
+            width: 12px;
+            height: 12px;
+            margin-right: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .permission-tree-icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .permission-tree-checkbox {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .permission-tree-name {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .permission-tree-children {
+            margin-left: 20px;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -1237,7 +1344,7 @@
 
     <!-- 角色授权弹窗 -->
     <div class="modal-overlay" id="roleAuthModal">
-        <div class="modal" style="max-width: 800px;">
+        <div class="modal" style="width: 1000px; height: 700px; max-width: none; max-height: none;">
             <div class="modal-header">
                 <div class="modal-title">角色授权</div>
                 <button class="modal-close" onclick="closeModal('roleAuthModal')">
@@ -1246,23 +1353,20 @@
                     </svg>
                 </button>
             </div>
-            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
-                <div id="roleAuthContent">
+            <div class="modal-body" style="display: flex; gap: 0; padding: 0; height: 560px; overflow: hidden;">
+                <!-- 左侧模块导航 -->
+                <div id="moduleNav" style="width: 240px; background: #fafafa; border-right: 1px solid #e8e8e8; overflow-y: auto; height: 100%;">
+                    <!-- 动态生成 -->
+                </div>
+                <!-- 中间权限树 -->
+                <div id="permissionTree" style="flex: 1; overflow-y: auto; padding: 20px; height: 100%;">
                     <!-- 动态生成 -->
                 </div>
             </div>
             <div class="modal-footer">
-                <div style="flex: 1;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn btn-default" onclick="selectAllPermissions()" style="padding: 6px 12px; font-size: 13px;">全选所有</button>
-                            <button class="btn btn-default" onclick="clearAllPermissions()" style="padding: 6px 12px; font-size: 13px;">清空所有</button>
-                        </div>
-                        <div style="display: flex; gap: 12px;">
-                            <button class="btn btn-default" onclick="closeModal('roleAuthModal')">取消</button>
-                            <button class="btn btn-primary" onclick="saveRoleAuth()">确定</button>
-                        </div>
-                    </div>
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button class="btn btn-default" onclick="closeModal('roleAuthModal')">取消</button>
+                    <button class="btn btn-primary" onclick="saveRoleAuth()">确定</button>
                 </div>
             </div>
         </div>
@@ -1850,145 +1954,312 @@
         }
 
         // 权限数据定义
-        const permissions = [
+        const permissionModules = [
             {
-                module: '靶区勾画',
-                features: ['画笔', '画刷', '橡皮擦', '多边形工具', '圆形工具', '矩形工具']
+                name: '靶区勾画',
+                expanded: false,
+                selected: false,
+                active: false,
+                permissions: [
+                    { name: '画笔', checked: false },
+                    { name: '画刷', checked: false },
+                    { name: '橡皮擦', checked: false },
+                    { 
+                        name: '多边形工具', 
+                        checked: false,
+                        expanded: false,
+                        children: [
+                            { name: '手动绘制', checked: false },
+                            { name: '自动识别', checked: false }
+                        ]
+                    },
+                    { name: '圆形工具', checked: false },
+                    { name: '矩形工具', checked: false }
+                ]
             },
             {
-                module: '计划设计',
-                features: ['播放MLC', '射束适形', '剂量率设置', '机架角设置', '准直器设置']
+                name: '计划设计',
+                expanded: false,
+                selected: false,
+                active: false,
+                permissions: [
+                    { name: '播放MLC', checked: false },
+                    { name: '射束适形', checked: false },
+                    { name: '剂量率设置', checked: false },
+                    { name: '机架角设置', checked: false },
+                    { name: '准直器设置', checked: false }
+                ]
             },
             {
-                module: '计划优化',
-                features: ['计划优化', '剂量计算', '目标函数设置', '约束条件设置', '优化算法选择']
+                name: '计划优化',
+                expanded: false,
+                selected: false,
+                active: false,
+                permissions: [
+                    { name: '计划优化', checked: false },
+                    { name: '剂量计算', checked: false },
+                    { name: '目标函数设置', checked: false },
+                    { name: '约束条件设置', checked: false },
+                    { name: '优化算法选择', checked: false }
+                ]
             },
             {
-                module: '剂量验证',
-                features: ['剂量计算', '剂量分布', 'DVH分析', '适形度分析']
+                name: '剂量验证',
+                expanded: false,
+                selected: false,
+                active: false,
+                permissions: [
+                    { name: '剂量计算', checked: false },
+                    { name: '剂量分布', checked: false },
+                    { name: 'DVH分析', checked: false },
+                    { name: '适形度分析', checked: false }
+                ]
             },
             {
-                module: '报告生成',
-                features: ['计划报告', '剂量报告', '图表导出', 'PDF导出']
+                name: '报告生成',
+                expanded: false,
+                selected: false,
+                active: false,
+                permissions: [
+                    { name: '计划报告', checked: false },
+                    { name: '剂量报告', checked: false },
+                    { name: '图表导出', checked: false },
+                    { name: 'PDF导出', checked: false }
+                ]
             },
             {
-                module: '患者管理',
-                features: ['患者信息查看', '患者信息编辑', '患者导入', '患者导出']
+                name: '患者管理',
+                expanded: false,
+                selected: false,
+                active: false,
+                permissions: [
+                    { name: '患者信息查看', checked: false },
+                    { name: '患者信息编辑', checked: false },
+                    { name: '患者导入', checked: false },
+                    { name: '患者导出', checked: false }
+                ]
             }
         ];
 
         // 角色授权
         let currentAuthingRoleName = '';
         let currentAuthingRoleIndex = -1;
-        let selectedPermissions = {}; // 存储选中的权限
+        let currentActiveModuleIndex = 0; // 当前激活的模块索引
 
         function openRoleAuth(roleName, index) {
             currentAuthingRoleName = roleName;
             currentAuthingRoleIndex = index;
-            selectedPermissions = {}; // 重置选中权限
             
-            renderPermissionList();
+            // 默认激活第一个模块
+            permissionModules.forEach((module, idx) => {
+                module.active = (idx === 0);
+            });
+            
+            renderModuleNav();
+            renderPermissionTree();
             openModal('roleAuthModal');
         }
 
-        // 渲染权限列表
-        function renderPermissionList() {
-            const container = document.getElementById('roleAuthContent');
-            container.innerHTML = permissions.map((perm, moduleIndex) => {
-                const moduleCheckboxes = perm.features.map((feature, featureIndex) => {
-                    const uniqueId = `perm_${moduleIndex}_${featureIndex}`;
-                    const isChecked = selectedPermissions[uniqueId] || false;
-                    return `
-                        <label style="display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; user-select: none;">
-                            <input type="checkbox" id="${uniqueId}" ${isChecked ? 'checked' : ''} 
-                                onchange="togglePermission('${uniqueId}', this.checked)" 
-                                style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer;">
-                            <span style="font-size: 14px;">${feature}</span>
-                        </label>
-                    `;
-                }).join('');
+        // 渲染左侧模块导航
+        function renderModuleNav() {
+            const container = document.getElementById('moduleNav');
+            container.innerHTML = permissionModules.map((module, index) => `
+                <div class="module-nav-item ${module.active ? 'active' : ''}" onclick="toggleModuleNav(${index})">
+                    <span class="module-nav-empty"></span>
+                    <span class="module-nav-name">${module.name}</span>
+                    <input type="checkbox" class="module-nav-checkbox" 
+                           ${module.selected ? 'checked' : ''}
+                           onclick="event.stopPropagation(); toggleModuleSelect(${index})"
+                           onchange="event.stopPropagation(); toggleModuleSelect(${index})">
+                </div>
+            `).join('');
+        }
+
+        // 点击模块导航（展开/激活）
+        function toggleModuleNav(index) {
+            permissionModules.forEach((m, i) => {
+                m.active = (i === index);
+            });
+            currentActiveModuleIndex = index;
+            renderModuleNav();
+            renderPermissionTree();
+        }
+
+
+        // 点击复选框（全选/取消该模块）
+        function toggleModuleSelect(index) {
+            const module = permissionModules[index];
+            const shouldSelect = !module.selected;
+            
+            // 全选/取消该模块的所有权限
+            selectAllPermissionsInModule(module, shouldSelect);
+            module.selected = shouldSelect;
+            
+            updateModuleSelectState(index);
+            renderModuleNav();
+            renderPermissionTree();
+        }
+
+        // 递归选择模块内所有权限
+        function selectAllPermissionsInModule(module, checked) {
+            module.permissions.forEach(perm => {
+                perm.checked = checked;
+                if (perm.children) {
+                    perm.children.forEach(child => {
+                        child.checked = checked;
+                    });
+                }
+            });
+        }
+
+        // 更新模块选择状态
+        function updateModuleSelectState(index) {
+            const module = permissionModules[index];
+            const allChecked = module.permissions.every(p => {
+                return p.checked && (!p.children || p.children.every(c => c.checked));
+            });
+            module.selected = allChecked;
+        }
+
+        // 渲染右侧权限树
+        function renderPermissionTree() {
+            const container = document.getElementById('permissionTree');
+            const activeModule = permissionModules[currentActiveModuleIndex];
+            
+            if (!activeModule) return;
+            
+            container.innerHTML = `
+                <div style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px;">
+                    ${activeModule.name}
+                </div>
+                ${renderPermissionItems(activeModule.permissions, '')}
+            `;
+        }
+
+        // 递归渲染权限项
+        function renderPermissionItems(permissions, prefix) {
+            return permissions.map((perm, index) => {
+                const hasChildren = perm.children && perm.children.length > 0;
+                const itemId = prefix ? `${prefix}_${index}` : `perm_${currentActiveModuleIndex}_${index}`;
                 
-                // 计算该模块是否全选
-                const allChecked = perm.features.every((feature, featureIndex) => {
-                    const uniqueId = `perm_${moduleIndex}_${featureIndex}`;
-                    return selectedPermissions[uniqueId];
-                });
+                let childrenHtml = '';
+                if (hasChildren && perm.expanded) {
+                    childrenHtml = `
+                        <div class="permission-tree-children">
+                            ${renderPermissionItems(perm.children, itemId)}
+                        </div>
+                    `;
+                }
+                
+                // 判断是否有子项，如果有则显示箭头
+                let arrowSvg = '';
+                if (hasChildren) {
+                    arrowSvg = `
+                        <svg class="permission-tree-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="transform: ${perm.expanded ? 'rotate(90deg)' : 'rotate(0deg)'}; transition: transform 0.2s;">
+                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    `;
+                }
                 
                 return `
-                    <div class="form-group" style="border: 1px solid #f0f0f0; border-radius: 4px; padding: 12px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                            <label style="display: flex; align-items: center; cursor: pointer; user-select: none; margin-right: 12px;">
-                                <input type="checkbox" id="module_${moduleIndex}" ${allChecked ? 'checked' : ''}
-                                    onchange="toggleModule(${moduleIndex}, this.checked)"
-                                    style="margin-right: 6px; width: 14px; height: 14px; cursor: pointer;">
-                            </label>
-                            <label class="form-label" style="margin-bottom: 0; flex: 1; font-size: 16px; font-weight: 600; color: #333;">${perm.module}</label>
+                    <div class="permission-tree-item">
+                        <div class="permission-tree-label" onclick="togglePermissionItem('${itemId}', ${hasChildren})">
+                            <span class="permission-tree-icon ${perm.expanded ? 'expanded' : ''}" 
+                                  style="width: ${hasChildren ? '16px' : '0'}; display: ${hasChildren ? 'inline-block' : 'none'}">
+                                ${arrowSvg}
+                            </span>
+                            <input type="checkbox" 
+                                   class="permission-tree-checkbox"
+                                   ${perm.checked ? 'checked' : ''}
+                                   onclick="event.stopPropagation(); togglePermissionCheck('${itemId}')"
+                                   onchange="event.stopPropagation(); togglePermissionCheck('${itemId}')">
+                            <span class="permission-tree-name">${perm.name}</span>
                         </div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                            ${moduleCheckboxes}
-                        </div>
+                        ${childrenHtml}
                     </div>
                 `;
             }).join('');
         }
 
-        // 切换单个权限
-        function togglePermission(permissionId, isChecked) {
-            selectedPermissions[permissionId] = isChecked;
-            updateModuleSelectAll();
+        // 点击权限项（展开/折叠）
+        function togglePermissionItem(itemId, hasChildren) {
+            if (!hasChildren) return;
+            
+            const perm = findPermissionById(currentActiveModuleIndex, itemId);
+            if (perm && perm.children) {
+                perm.expanded = !perm.expanded;
+                renderPermissionTree();
+            }
         }
 
-        // 切换模块全选
-        function toggleModule(moduleIndex, isChecked) {
-            const perm = permissions[moduleIndex];
-            perm.features.forEach((feature, featureIndex) => {
-                const uniqueId = `perm_${moduleIndex}_${featureIndex}`;
-                selectedPermissions[uniqueId] = isChecked;
-                const checkbox = document.getElementById(uniqueId);
-                if (checkbox) checkbox.checked = isChecked;
-            });
-        }
-
-        // 更新模块全选状态
-        function updateModuleSelectAll() {
-            permissions.forEach((perm, moduleIndex) => {
-                const allChecked = perm.features.every((feature, featureIndex) => {
-                    const uniqueId = `perm_${moduleIndex}_${featureIndex}`;
-                    return selectedPermissions[uniqueId];
-                });
-                const moduleCheckbox = document.getElementById(`module_${moduleIndex}`);
-                if (moduleCheckbox) {
-                    moduleCheckbox.checked = allChecked;
+        // 切换权限复选框
+        function togglePermissionCheck(itemId) {
+            const perm = findPermissionById(currentActiveModuleIndex, itemId);
+            if (perm) {
+                perm.checked = !perm.checked;
+                
+                // 如果有子项，同步子项状态
+                if (perm.children) {
+                    perm.children.forEach(child => {
+                        child.checked = perm.checked;
+                    });
                 }
-            });
+                
+                // 更新模块选择状态
+                updateModuleSelectState(currentActiveModuleIndex);
+                renderModuleNav();
+                renderPermissionTree();
+            }
         }
 
-        // 全选所有权限
-        function selectAllPermissions() {
-            permissions.forEach((perm, moduleIndex) => {
-                toggleModule(moduleIndex, true);
-            });
-            updateModuleSelectAll();
+        // 根据ID查找权限
+        function findPermissionById(moduleIndex, itemId) {
+            const module = permissionModules[moduleIndex];
+            if (!module) return null;
+            
+            // 提取路径：去掉前缀，只保留索引路径
+            const parts = itemId.split('_').slice(2);
+            
+            // 递归查找
+            function findInTree(permissions, pathIndex) {
+                if (pathIndex >= parts.length) return null;
+                
+                const index = parseInt(parts[pathIndex]);
+                if (index >= permissions.length) return null;
+                
+                const perm = permissions[index];
+                
+                if (pathIndex === parts.length - 1) {
+                    // 最后一级，返回这个权限
+                    return perm;
+                } else {
+                    // 继续往下查找
+                    if (perm.children && perm.children.length > 0) {
+                        return findInTree(perm.children, pathIndex + 1);
+                    }
+                }
+                
+                return null;
+            }
+            
+            return findInTree(module.permissions, 0);
         }
 
-        // 清空所有权限
-        function clearAllPermissions() {
-            // 清空选中状态
-            selectedPermissions = {};
-            // 重新初始化所有checkbox状态
-            permissions.forEach((perm, moduleIndex) => {
-                perm.features.forEach((feature, featureIndex) => {
-                    const uniqueId = `perm_${moduleIndex}_${featureIndex}`;
-                    selectedPermissions[uniqueId] = false;
+        // 保存权限
+        function saveRoleAuth() {
+            let totalCount = 0;
+            permissionModules.forEach(module => {
+                module.permissions.forEach(perm => {
+                    if (perm.checked) totalCount++;
+                    if (perm.children) {
+                        perm.children.forEach(child => {
+                            if (child.checked) totalCount++;
+                        });
+                    }
                 });
             });
-            // 重新渲染
-            renderPermissionList();
-        }
-
-        function saveRoleAuth() {
-            const selectedCount = Object.values(selectedPermissions).filter(v => v).length;
-            alert(`授权成功！已选择 ${selectedCount} 项权限`);
+            
+            alert(`授权成功！已选择 ${totalCount} 项权限`);
             closeModal('roleAuthModal');
         }
 
